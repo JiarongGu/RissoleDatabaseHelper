@@ -7,14 +7,14 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 
-namespace RissoleDatabaseHelper.Internals
+namespace RissoleDatabaseHelper
 {
     /// <summary>
     /// helper class build table definition based on given type
     /// </summary>
-    internal class RissoleTableBuilder
+    internal class RissoleDefinitionBuilder
     {
-        private List<RissoleColumn> BuildColumns(Type model)
+        public List<RissoleColumn> BuildColumns(Type model)
         {
             var columns = new List<RissoleColumn>();
 
@@ -23,14 +23,14 @@ namespace RissoleDatabaseHelper.Internals
             foreach (var property in properties)
             {
                 //create column based on column attribute
-                RissoleColumn column = BuildColumn(property);
+                RissoleColumn column = BuildRissoleColumn(property);
                 columns.Add(column);
             }
 
             return columns;
         }
 
-        private RissoleColumn BuildColumn(PropertyInfo property)
+        public RissoleColumn BuildRissoleColumn(PropertyInfo property)
         {
             CustomAttributeData columnAttribute = property.CustomAttributes.FirstOrDefault(x => x.AttributeType == typeof(ColumnAttribute));
 
@@ -54,12 +54,12 @@ namespace RissoleDatabaseHelper.Internals
             }
             
             //create keys based on key attribute
-            column.Keys = BuildKeys(property);
+            column.Keys = BuildRissoleKeys(property);
 
             return column;
         }
 
-        private List<RissoleKey> BuildKeys(PropertyInfo property)
+        public List<RissoleKey> BuildRissoleKeys(PropertyInfo property)
         {
             List<CustomAttributeData> keyAttributes = property.CustomAttributes.Where(x => x.AttributeType == typeof(KeyAttribute)).ToList();
 
@@ -72,14 +72,18 @@ namespace RissoleDatabaseHelper.Internals
             {
                 RissoleKey key = new RissoleKey();
 
-                foreach (var value in foreignKeyAttribute.NamedArguments)
+                foreach (var argument in foreignKeyAttribute.NamedArguments)
                 {
-                    switch (value.MemberName)
+                    var value = argument.TypedValue.Value;
+                    var name = argument.MemberName;
+
+                    switch (name)
                     {
-                        case "Table": key.TableName = (string)value.TypedValue.Value; break;
-                        case "Column": key.ColumnName = (string)value.TypedValue.Value; break;
-                        case "Type": key.Type = (KeyType)value.TypedValue.Value; break;
-                        default: throw new Exception("Unknow Attribute: " + value.MemberName);
+                        case "Table": key.TableName = (string)value; break;
+                        case "Column": key.ColumnName = (string)value; break;
+                        case "Type": key.Type = (KeyType)value; break;
+                        case "IsComputed": key.IsComputed = (bool)value; break;
+                        default: throw new Exception("Unknow Attribute: " + name);
                     }
                 }
 
@@ -89,7 +93,7 @@ namespace RissoleDatabaseHelper.Internals
             return keys;
         }
 
-        public RissoleTable BuildTable(Type model)
+        public RissoleTable BuildRissoleTable(Type model)
         {
             // in this function table attribute should never be null
             var tableAttribute = model.GetTypeInfo().GetCustomAttributes<TableAttribute>().First();

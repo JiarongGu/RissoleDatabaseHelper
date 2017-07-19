@@ -20,7 +20,7 @@ namespace RissoleDatabaseHelper
         private readonly RissoleTable _table;
 
         private readonly RissoleCommandBuilder _commandBuilder;
-        private readonly RissoleTableBuilder _definitionBuilder;
+        private readonly RissoleDefinitionBuilder _definitionBuilder;
 
         private Dictionary<string, string> _scriptDictionary;
         private Dictionary<Type, RissoleTable> _otherDefinitions;
@@ -30,12 +30,12 @@ namespace RissoleDatabaseHelper
             _connection = connection;
 
             _commandBuilder = new RissoleCommandBuilder(connection);
-            _definitionBuilder = new RissoleTableBuilder();
+            _definitionBuilder = new RissoleDefinitionBuilder();
 
             _scriptDictionary = new Dictionary<string, string>();
             _otherDefinitions = new Dictionary<Type, RissoleTable>();
 
-            _table = _definitionBuilder.BuildTable(typeof(T));
+            _table = _definitionBuilder.BuildRissoleTable(typeof(T));
         }
 
         #region Basic Executions
@@ -351,7 +351,7 @@ namespace RissoleDatabaseHelper
             if (_otherDefinitions.ContainsKey(type))
                 return _otherDefinitions[type];
 
-            return _definitionBuilder.BuildTable(type);
+            return _definitionBuilder.BuildRissoleTable(type);
         }
 
         private string GetScriptName(params object[] args)

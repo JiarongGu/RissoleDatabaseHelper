@@ -10,11 +10,16 @@ namespace RissoleDatabaseHelper.Attributes
     {
         public KeyAttribute() { }
 
-        public KeyAttribute(string table, string column, KeyType type)
+        public KeyAttribute(KeyType type)
+        {
+            Type = type;
+        }
+        
+        public KeyAttribute(string table, string column, KeyType type) :
+            this(type)
         {
             Table = table;
             Column = column;
-            Type = type;
         }
 
         public string Table { get; set; }
@@ -22,5 +27,7 @@ namespace RissoleDatabaseHelper.Attributes
         public string Column { get; set; }
 
         public KeyType Type { get; set; }
+
+        public bool IsComputed { get; set;}
     }
 }
