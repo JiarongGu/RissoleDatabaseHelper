@@ -1,4 +1,6 @@
-﻿using System;
+﻿using RissoleDatabaseHelper.Models;
+using RissoleDatabaseHelper.Utils;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq.Expressions;
@@ -117,7 +119,7 @@ namespace RissoleDatabaseHelper
 
             var rissoleCommand = new RissoleCommand<T>(this);
             rissoleCommand.Script += " " + rissoleScript.Script;
-            rissoleCommand.Parameters.AddRange(rissoleScript.Parameters);
+            rissoleCommand.Parameters.AddRange(GetParameterFromRissoleScript(rissoleScript));
 
             return rissoleCommand;
         }
@@ -128,7 +130,7 @@ namespace RissoleDatabaseHelper
 
             var rissoleCommand = new RissoleCommand<T>(this);
             rissoleCommand.Script += " " + rissoleScript.Script;
-            rissoleCommand.Parameters.AddRange(rissoleScript.Parameters);
+            rissoleCommand.Parameters.AddRange(GetParameterFromRissoleScript(rissoleScript));
 
             return rissoleCommand;
         }
@@ -138,10 +140,25 @@ namespace RissoleDatabaseHelper
             var rissoleCommand = new RissoleCommand<T>(this);
             rissoleCommand.Script += " " + script;
             rissoleCommand.Parameters.AddRange(Parameters);
-
+            
             return rissoleCommand;
         }
-        
+
+        private ICollection<IDbDataParameter> GetParameterFromRissoleScript(RissoleScript rissoleScript)
+        {
+            var tempCommand = Connection.CreateCommand();
+            List<IDbDataParameter> parameters = new List<IDbDataParameter>();
+            foreach (var scriptParam in rissoleScript.Parameters)
+            {
+                var parameter = tempCommand.CreateParameter();
+                parameter.ParameterName = scriptParam.Key;
+                parameter.Value = scriptParam.Value;
+                parameter.DbType = RissoleData.TypeMap[scriptParam.Value.GetType()];
+                parameters.Add(parameter);
+            }
+            return parameters;
+        }
+
         public IRissoleCommand<T> Custom(string script, params IDbDataParameter[] parameters)
         {
             return Custom(script, new List<IDbDataParameter>(parameters));

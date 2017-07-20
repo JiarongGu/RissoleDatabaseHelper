@@ -16,7 +16,11 @@ namespace RissoleDatabaseHelper
         IRissoleCommand<T> Build(string script, T model);
 
         IRissoleCommand<T> Build(IDbCommand command);
-        
+
+        IRissoleCommand<T> Insert(T model);
+
+        IRissoleCommand<T> Insert(List<T> model);
+
         IRissoleCommand<T> Delete(T model);
 
         IRissoleCommand<T> Delete(object primary);

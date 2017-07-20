@@ -91,5 +91,6 @@ namespace RissoleDatabaseHelper
                 return _rissoleProvider;
             }
         }
+
     }
 }

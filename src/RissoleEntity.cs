@@ -55,7 +55,6 @@ namespace RissoleDatabaseHelper
             var rissoleScript = _rissoleProvider.GetSelectCondition(prdicate);
 
             rissoleCommand.Script = rissoleScript.Script;
-            rissoleCommand.Parameters.AddRange(rissoleScript.Parameters);
 
             return rissoleCommand;
         }
@@ -66,6 +65,16 @@ namespace RissoleDatabaseHelper
         }
 
         public IRissoleCommand<T> Select(string script)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IRissoleCommand<T> Insert(T model)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IRissoleCommand<T> Insert(List<T> model)
         {
             throw new NotImplementedException();
         }
