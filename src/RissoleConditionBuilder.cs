@@ -15,47 +15,38 @@ namespace RissoleDatabaseHelper
     /// </summary>
     internal class RissoleConditionBuilder
     {
-        private readonly IRissoleProvider _rissoleProvider;
-        private RissoleTable _rissoleTable;
-
-        public RissoleConditionBuilder(IRissoleProvider provider)
+        public string ToSql<T>(Expression<Func<T, bool>> expression, RissoleTable rissoleTable)
         {
-            _rissoleProvider = provider;
+            return Resolve(expression.Body, rissoleTable);
         }
 
-        public string ToSql<T>(Expression<Func<T, bool>> expression)
+        private string Resolve(Expression expression, RissoleTable rissoleTable,  bool right = false)
         {
-            _rissoleTable = _rissoleProvider.GetRissoleTable<T>();
-            return Resolve(expression.Body);
-        }
+            if (expression is UnaryExpression) return ResolveUnaryExpression((UnaryExpression)expression, rissoleTable);
 
-        private string Resolve(Expression expression, bool right = false)
-        {
-            if (expression is UnaryExpression) return ResolveUnaryExpression((UnaryExpression)expression);
-
-            if (expression is BinaryExpression) return ResolveBinaryExpression((BinaryExpression)expression);
+            if (expression is BinaryExpression) return ResolveBinaryExpression((BinaryExpression)expression, rissoleTable);
 
             if (expression is ConstantExpression) return ResolveConstantExpression((ConstantExpression)expression);
 
-            if (expression is MemberExpression) return ResolveMemberExpression((MemberExpression)expression, right);
+            if (expression is MemberExpression) return ResolveMemberExpression((MemberExpression)expression, rissoleTable, right);
 
-            if (expression is MethodCallExpression) return ResolveMethodCallExpression((MethodCallExpression)expression);
+            if (expression is MethodCallExpression) return ResolveMethodCallExpression((MethodCallExpression)expression, rissoleTable);
 
             throw new Exception("Unsupported expression: " + expression.GetType().Name);
         }
 
-        private string ResolveUnaryExpression(UnaryExpression expression)
+        private string ResolveUnaryExpression(UnaryExpression expression, RissoleTable rissoleTable)
         {
-            var right = Resolve(expression.Operand);
+            var right = Resolve(expression.Operand, rissoleTable);
             var node = NodeTypeToString(expression.NodeType, right == "NULL");
 
             return $"({node} {right})";
         }
 
-        private string ResolveBinaryExpression(BinaryExpression expression)
+        private string ResolveBinaryExpression(BinaryExpression expression, RissoleTable rissoleTable)
         {
-            var left = Resolve(expression.Left);
-            var right = Resolve(expression.Right, true);
+            var left = Resolve(expression.Left, rissoleTable);
+            var right = Resolve(expression.Right, rissoleTable, true);
             var node = NodeTypeToString(expression.NodeType, right == "NULL");
 
             return $"({left} {node} {right})";
@@ -66,7 +57,7 @@ namespace RissoleDatabaseHelper
             return ValueToString(expression.Value);
         }
 
-        private string ResolveMemberExpression(MemberExpression expression, bool right)
+        private string ResolveMemberExpression(MemberExpression expression, RissoleTable rissoleTable, bool right)
         {
             if (expression.Member is PropertyInfo)
             {
@@ -78,7 +69,7 @@ namespace RissoleDatabaseHelper
                     return ValueToString(value);
                 }
 
-                var columnName = _rissoleTable.GetColumnByPropertyName(property.Name).Name;
+                var columnName = rissoleTable.GetColumnByPropertyName(property.Name).Name;
                 return "[" + columnName + "]";
             }
 
@@ -90,20 +81,20 @@ namespace RissoleDatabaseHelper
             throw new Exception($"Expression does not refer to a property or field: {expression}");
         }
 
-        private string ResolveMethodCallExpression(MethodCallExpression expression)
+        private string ResolveMethodCallExpression(MethodCallExpression expression, RissoleTable rissoletable)
         {
             // LIKE queries:
             if (expression.Method == typeof(string).GetMethod("Contains", new[] { typeof(string) }))
             {
-                return "(" + Resolve(expression.Object) + " LIKE '%" + Resolve(expression.Arguments[0]) + "%')";
+                return "(" + Resolve(expression.Object, rissoletable) + " LIKE '%" + Resolve(expression.Arguments[0], rissoletable) + "%')";
             }
             if (expression.Method == typeof(string).GetMethod("StartsWith", new[] { typeof(string) }))
             {
-                return "(" + Resolve(expression.Object) + " LIKE '" + Resolve(expression.Arguments[0]) + "%')";
+                return "(" + Resolve(expression.Object, rissoletable) + " LIKE '" + Resolve(expression.Arguments[0], rissoletable) + "%')";
             }
             if (expression.Method == typeof(string).GetMethod("EndsWith", new[] { typeof(string) }))
             {
-                return "(" + Resolve(expression.Object) + " LIKE '%" + Resolve(expression.Arguments[0]) + "')";
+                return "(" + Resolve(expression.Object, rissoletable) + " LIKE '%" + Resolve(expression.Arguments[0], rissoletable) + "')";
             }
             // IN queries:
             if (expression.Method.Name == "Contains")
@@ -134,7 +125,7 @@ namespace RissoleDatabaseHelper
                 {
                     return ValueToString(false);
                 }
-                return "(" + Resolve(property) + " IN (" + concated.Substring(0, concated.Length - 2) + "))";
+                return "(" + Resolve(property, rissoletable) + " IN (" + concated.Substring(0, concated.Length - 2) + "))";
             }
 
             object value = Expression.Lambda(expression).Compile().DynamicInvoke();

@@ -2,27 +2,26 @@ using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using RissoleDatabaseHelper;
 using RissoleDatabaseHelperUnitTest.Mocks;
+using System.Data;
 
 namespace RissoleDatabaseHelperUnitTest
 {
     [TestClass]
     public class RissoleConditionBuilderUnitTest
     {
-        RissoleConditionBuilder _rissoleConditionBuiler;
-
         [TestInitialize]
         public void Initalize()
         {
-            _rissoleConditionBuiler = new RissoleConditionBuilder(RissoleProvider.Instance);
         }
 
         [TestMethod]
         public void TestMethod1()
         {
             var account = new Account();
-            var command = _rissoleConditionBuiler.ToSql<Account>(x => x.AccountId != account.AccountId);
-            
-            
+            IRissoleEntity<Account> rissoleEntity = new RissoleEntity<Account>(null);
+            var accounts = rissoleEntity.Select(x => x.AccountId)
+                .Join<User>((x, y) => x.AccountId == y.UserId)
+                .Where(x => x.AccountId == Guid.NewGuid()).ToList();
         }
     }
 }

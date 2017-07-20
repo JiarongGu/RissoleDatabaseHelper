@@ -15,25 +15,19 @@ namespace RissoleDatabaseHelper
         IRissoleCommand<T> Build(string script, T model);
 
         IRissoleCommand<T> Build(IDbCommand command);
-
-        IRissoleCommand<T> Select(T model);
-
-        IRissoleCommand<T> Select(object primary);
-
-        IRissoleCommand<T> Select(Func<T, bool> prdicate);
-
-        IRissoleCommand<T> Single(T model);
-
-        IRissoleCommand<T> Single(object primary);
-
-        IRissoleCommand<T> Update(T model);
-
-        IRissoleCommand<T> Update(IList<T> model);
-
+        
         IRissoleCommand<T> Delete(T model);
 
         IRissoleCommand<T> Delete(object primary);
 
-        IRissoleCommand<T> Delete(Func<T, bool> prdicate);
+        IRissoleCommand<T> Update(T model);
+
+        IRissoleCommand<T> Update(IList<T> model);
+        
+        IRissoleCommand<T> Select(Func<T, object> prdicate);
+
+        IRissoleCommand<T> Select<TFrom>(Func<T, object> prdicate);
+
+        IRissoleCommand<T> Select(string script);
     }
 }

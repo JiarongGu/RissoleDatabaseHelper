@@ -1,4 +1,5 @@
-﻿using System;
+﻿using RissoleDatabaseHelper.Models;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Text;
@@ -8,7 +9,15 @@ namespace RissoleDatabaseHelper
     public class RissoleEntity<T> : IRissoleEntity<T>
     {
         private IDbConnection _dbConnection;
-        public IDbConnection Connection { get => _dbConnection; set => _dbConnection = value; }
+        private IRissoleProvider _rissoleProvider;
+        private RissoleTable _rissoleTable;
+
+        public RissoleEntity(IDbConnection dbConnection)
+        {
+            _dbConnection = dbConnection;
+            _rissoleProvider = RissoleProvider.Instance;
+            _rissoleTable = _rissoleProvider.GetRissoleTable<T>();
+        }
 
         public IRissoleCommand<T> Build(string script, T model)
         {
@@ -30,44 +39,21 @@ namespace RissoleDatabaseHelper
             throw new NotImplementedException();
         }
 
-        public IRissoleCommand<T> Delete(Func<T, bool> prdicate)
-        {
-            throw new NotImplementedException();
-        }
-
-        public IRissoleCommand<T> Select(T model)
-        {
-            throw new NotImplementedException();
-        }
-
-        public IRissoleCommand<T> Select(object primary)
-        {
-            throw new NotImplementedException();
-        }
-
-        public IRissoleCommand<T> Select(Func<T, bool> prdicate)
-        {
-            throw new NotImplementedException();
-        }
-
-        public IRissoleCommand<T> Single(T model)
-        {
-            throw new NotImplementedException();
-        }
-
-        public IRissoleCommand<T> Single(object primary)
-        {
-            throw new NotImplementedException();
-        }
-
         public IRissoleCommand<T> Update(T model)
         {
             throw new NotImplementedException();
         }
-
         public IRissoleCommand<T> Update(IList<T> model)
         {
             throw new NotImplementedException();
         }
+
+        public IRissoleCommand<T> Select(Func<T, object> prdicate)
+        {
+            var command = new RissoleCommand<T>(_dbConnection, _rissoleProvider);
+            return command;
+        }
+        
+        public IDbConnection Connection { get => _dbConnection; set => _dbConnection = value; }
     }
 }
