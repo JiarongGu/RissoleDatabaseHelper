@@ -93,13 +93,13 @@ namespace RissoleDatabaseHelper
             return keys;
         }
 
-        public RissoleTable BuildRissoleTable(Type model)
+        public RissoleTable BuildRissoleTable(Type type)
         {
             // in this function table attribute should never be null
-            var tableAttribute = model.GetTypeInfo().GetCustomAttributes<TableAttribute>().First();
+            var tableAttribute = type.GetTypeInfo().GetCustomAttributes<TableAttribute>().First();
 
             // define new table, default as class name
-            var table = new RissoleTable(model.GetTypeInfo().Name);
+            var table = new RissoleTable(type);
 
             // override table name if attribute defines
             if (tableAttribute.Name != null)
@@ -108,7 +108,7 @@ namespace RissoleDatabaseHelper
             }
 
             // create table columns
-            table.Columns = BuildColumns(model);
+            table.Columns = BuildColumns(type);
             return table;
         }
     }

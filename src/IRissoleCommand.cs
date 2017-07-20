@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq.Expressions;
 using System.Text;
 
 namespace RissoleDatabaseHelper
@@ -13,17 +14,23 @@ namespace RissoleDatabaseHelper
 
         string Script { get; set; }
 
-        ICollection<IDbDataParameter> Parameters { get; }
+        List<IDbDataParameter> Parameters { get; set; }
 
         IDbConnection Connection { get; set; }
         
-        IRissoleCommand<T> Where(Func<T, bool> prdicate);
+        IRissoleCommand<T> Where(Expression<Func<T, bool>> prdicate);
 
         IRissoleCommand<T> First(T model);
 
-        IRissoleCommand<T> First(Func<T, bool> prdicate);
+        IRissoleCommand<T> First(Expression<Func<T, bool>> prdicate);
 
-        IRissoleCommand<T> Join<TJoin> (Func<T, TJoin, bool> prdicate);
+        IRissoleCommand<T> Join<TJoin> (Expression<Func<T, TJoin, bool>> prdicate);
+
+        IRissoleCommand<T> Custom(string script, List<IDbDataParameter> parameters);
+
+        IRissoleCommand<T> Custom(string script, params IDbDataParameter[] parameters);
+
+        IDbCommand BuildCommand();
 
         T First();
 

@@ -34,9 +34,44 @@ namespace RissoleDatabaseHelper
             return rissoleTable;
         }
 
-        public string GetWhereCondition<T>(Expression<Func<T, bool>> expression)
+        public RissoleScript GetWhereCondition<T>(Expression<Func<T, bool>> expression)
         {
-            throw new NotImplementedException();
+            var outTable = GetRissoleTable<T>();
+            var rissoleTables = new List<RissoleTable>() { outTable };
+
+            var rissoleScript = GetCondition(expression, rissoleTables);
+            rissoleScript.Script = $"WHERE {rissoleScript.Script}";
+
+            return rissoleScript;
+        }
+        
+        public RissoleScript GetJoinScript<T, TJoin>(Expression<Func<T, TJoin, bool>> expression)
+        {
+            var joinTable = GetRissoleTable<TJoin>();
+            var outTable = GetRissoleTable<T>();
+
+            var rissoleTables = new List<RissoleTable>() { joinTable, outTable };
+
+            var rissoleScript = GetCondition(expression, rissoleTables);
+            rissoleScript.Script = $"JOIN {joinTable.Name} ON {rissoleScript.Script}";
+
+            return rissoleScript;
+        }
+
+        public RissoleScript GetSelectCondition<T>(Expression<Func<T, object>> expression)
+        {
+            var outTable = GetRissoleTable<T>();
+            var rissoleTables = new List<RissoleTable>() { outTable };
+
+            var rissoleScript = GetCondition(expression, rissoleTables);
+            rissoleScript.Script = $"SELECT {rissoleScript.Script} FROM {outTable.Name}";
+
+            return rissoleScript;
+        }
+        
+        private RissoleScript GetCondition(LambdaExpression expression, List<RissoleTable> rissoleTables)
+        {
+            return _rissoleConditionBuilder.RissoleScript(expression, rissoleTables);
         }
 
         public RissoleCommandExecutor<T> GetRissoleExecutor<T>()

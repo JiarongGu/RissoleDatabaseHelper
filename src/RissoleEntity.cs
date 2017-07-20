@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq.Expressions;
 using System.Text;
 
 namespace RissoleDatabaseHelper
@@ -48,12 +49,27 @@ namespace RissoleDatabaseHelper
             throw new NotImplementedException();
         }
 
-        public IRissoleCommand<T> Select(Func<T, object> prdicate)
+        public IRissoleCommand<T> Select(Expression<Func<T, object>> prdicate)
         {
-            var command = new RissoleCommand<T>(_dbConnection, _rissoleProvider);
-            return command;
+            var rissoleCommand = new RissoleCommand<T>(_dbConnection, _rissoleProvider);
+            var rissoleScript = _rissoleProvider.GetSelectCondition(prdicate);
+
+            rissoleCommand.Script = rissoleScript.Script;
+            rissoleCommand.Parameters.AddRange(rissoleScript.Parameters);
+
+            return rissoleCommand;
         }
-        
+
+        public IRissoleCommand<T> Select<TFrom>(Expression<Func<T, object>> prdicate)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IRissoleCommand<T> Select(string script)
+        {
+            throw new NotImplementedException();
+        }
+
         public IDbConnection Connection { get => _dbConnection; set => _dbConnection = value; }
     }
 }

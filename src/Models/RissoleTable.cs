@@ -10,9 +10,10 @@ namespace RissoleDatabaseHelper.Models
     {
         public RissoleTable() { }
 
-        public RissoleTable(string name)
+        public RissoleTable(Type type)
         {
-            Name = name;
+            ReferenceType = type;
+            Name = type.GetTypeInfo().Name;
         }
 
         public string Name { get; set; }
@@ -23,5 +24,7 @@ namespace RissoleDatabaseHelper.Models
         {
             return Columns.FirstOrDefault(x => x.Property.Name == name);
         }
+
+        public Type ReferenceType { get;}
     }
 }

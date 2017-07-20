@@ -18,10 +18,13 @@ namespace RissoleDatabaseHelperUnitTest
         public void TestMethod1()
         {
             var account = new Account();
+            var user = new User();
+
             IRissoleEntity<Account> rissoleEntity = new RissoleEntity<Account>(null);
-            var accounts = rissoleEntity.Select(x => x.AccountId)
-                .Join<User>((x, y) => x.AccountId == y.UserId)
-                .Where(x => x.AccountId == Guid.NewGuid()).ToList();
+
+            var command = rissoleEntity.Select(x => x).Join<User>((x, y) => x.AccountId == y.UserId)
+                .Where(x => x.AccountId == Guid.NewGuid()).Custom("ORDER BY 1 DESC");
+
         }
     }
 }

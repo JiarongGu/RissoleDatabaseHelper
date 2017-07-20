@@ -15,38 +15,66 @@ namespace RissoleDatabaseHelper
     /// </summary>
     internal class RissoleConditionBuilder
     {
-        public string ToSql<T>(Expression<Func<T, bool>> expression, RissoleTable rissoleTable)
+        public RissoleScript RissoleScript(LambdaExpression expression, ICollection<RissoleTable> rissoleTables)
         {
-            return Resolve(expression.Body, rissoleTable);
+            var parameters = ResolveParameters(expression, rissoleTables);
+
+            var script = ResolveScript(expression.Body, parameters);
+
+            var rssioleScript = new RissoleScript();
+            rssioleScript.Script = script;
+
+            return rssioleScript;
         }
 
-        private string Resolve(Expression expression, RissoleTable rissoleTable,  bool right = false)
+        private Dictionary<ParameterExpression, RissoleTable> ResolveParameters(LambdaExpression expression, ICollection<RissoleTable> rissoleTables)
         {
-            if (expression is UnaryExpression) return ResolveUnaryExpression((UnaryExpression)expression, rissoleTable);
+            Dictionary<ParameterExpression, RissoleTable> parameters = new Dictionary<ParameterExpression, RissoleTable>();
 
-            if (expression is BinaryExpression) return ResolveBinaryExpression((BinaryExpression)expression, rissoleTable);
+            foreach (var rissoleTable in rissoleTables)
+            {
+                var lambdaParameter = expression.Parameters.First(x => x.Type == rissoleTable.ReferenceType);
+                parameters.Add(lambdaParameter, rissoleTable);
+            }
+
+            return parameters;
+        }
+
+        private string ResolveScript(Expression expression, Dictionary<ParameterExpression, RissoleTable> parameters)
+        {
+            if (expression is UnaryExpression) return ResolveUnaryExpression((UnaryExpression)expression, parameters);
+
+            if (expression is BinaryExpression) return ResolveBinaryExpression((BinaryExpression)expression, parameters);
 
             if (expression is ConstantExpression) return ResolveConstantExpression((ConstantExpression)expression);
 
-            if (expression is MemberExpression) return ResolveMemberExpression((MemberExpression)expression, rissoleTable, right);
+            if (expression is MemberExpression) return ResolveMemberExpression((MemberExpression)expression, parameters);
 
-            if (expression is MethodCallExpression) return ResolveMethodCallExpression((MethodCallExpression)expression, rissoleTable);
+            if (expression is MethodCallExpression) return ResolveMethodCallExpression((MethodCallExpression)expression, parameters);
+
+            if (expression is ParameterExpression) return ResolveTypeAccessException((ParameterExpression)expression, parameters);
 
             throw new Exception("Unsupported expression: " + expression.GetType().Name);
         }
 
-        private string ResolveUnaryExpression(UnaryExpression expression, RissoleTable rissoleTable)
+        private string ResolveTypeAccessException(ParameterExpression expression, Dictionary<ParameterExpression, RissoleTable> parameters)
         {
-            var right = Resolve(expression.Operand, rissoleTable);
-            var node = NodeTypeToString(expression.NodeType, right == "NULL");
+            var table = parameters[expression];
+            var columnName = string.Join(", ", table.Columns.Select(x => $"{table.Name}.{x.Name}").ToList());
+            return columnName;
+        }
 
+        private string ResolveUnaryExpression(UnaryExpression expression, Dictionary<ParameterExpression, RissoleTable> parameters)
+        {
+            var right = ResolveScript(expression.Operand, parameters);
+            var node = NodeTypeToString(expression.NodeType, right == "NULL");
             return $"({node} {right})";
         }
 
-        private string ResolveBinaryExpression(BinaryExpression expression, RissoleTable rissoleTable)
+        private string ResolveBinaryExpression(BinaryExpression expression, Dictionary<ParameterExpression, RissoleTable> parameters)
         {
-            var left = Resolve(expression.Left, rissoleTable);
-            var right = Resolve(expression.Right, rissoleTable, true);
+            var left = ResolveScript(expression.Left, parameters);
+            var right = ResolveScript(expression.Right, parameters);
             var node = NodeTypeToString(expression.NodeType, right == "NULL");
 
             return $"({left} {node} {right})";
@@ -57,20 +85,20 @@ namespace RissoleDatabaseHelper
             return ValueToString(expression.Value);
         }
 
-        private string ResolveMemberExpression(MemberExpression expression, RissoleTable rissoleTable, bool right)
+        private string ResolveMemberExpression(MemberExpression expression, Dictionary<ParameterExpression, RissoleTable> parameters)
         {
             if (expression.Member is PropertyInfo)
             {
-                var property = (PropertyInfo)expression.Member;
-
-                if (right)
+                if (expression.Expression is ParameterExpression)
                 {
-                    var value = Expression.Lambda(expression).Compile().DynamicInvoke();
-                    return ValueToString(value);
+                    var property = (PropertyInfo)expression.Member;
+                    var table = parameters[(ParameterExpression)expression.Expression];
+                    var columnName = table.Columns.First(x => x.Property == property).Name;
+                    
+                    return $"{table.Name}.{columnName}";
                 }
 
-                var columnName = rissoleTable.GetColumnByPropertyName(property.Name).Name;
-                return "[" + columnName + "]";
+                return ValueToString(GetValue(expression));
             }
 
             if (expression.Member is FieldInfo)
@@ -81,20 +109,20 @@ namespace RissoleDatabaseHelper
             throw new Exception($"Expression does not refer to a property or field: {expression}");
         }
 
-        private string ResolveMethodCallExpression(MethodCallExpression expression, RissoleTable rissoletable)
+        private string ResolveMethodCallExpression(MethodCallExpression expression, Dictionary<ParameterExpression, RissoleTable> parameters)
         {
             // LIKE queries:
             if (expression.Method == typeof(string).GetMethod("Contains", new[] { typeof(string) }))
             {
-                return "(" + Resolve(expression.Object, rissoletable) + " LIKE '%" + Resolve(expression.Arguments[0], rissoletable) + "%')";
+                return "(" + ResolveScript(expression.Object, parameters) + " LIKE '%" + ResolveScript(expression.Arguments[0], parameters) + "%')";
             }
             if (expression.Method == typeof(string).GetMethod("StartsWith", new[] { typeof(string) }))
             {
-                return "(" + Resolve(expression.Object, rissoletable) + " LIKE '" + Resolve(expression.Arguments[0], rissoletable) + "%')";
+                return "(" + ResolveScript(expression.Object, parameters) + " LIKE '" + ResolveScript(expression.Arguments[0], parameters) + "%')";
             }
             if (expression.Method == typeof(string).GetMethod("EndsWith", new[] { typeof(string) }))
             {
-                return "(" + Resolve(expression.Object, rissoletable) + " LIKE '%" + Resolve(expression.Arguments[0], rissoletable) + "')";
+                return "(" + ResolveScript(expression.Object, parameters) + " LIKE '%" + ResolveScript(expression.Arguments[0], parameters) + "')";
             }
             // IN queries:
             if (expression.Method.Name == "Contains")
@@ -125,7 +153,7 @@ namespace RissoleDatabaseHelper
                 {
                     return ValueToString(false);
                 }
-                return "(" + Resolve(property, rissoletable) + " IN (" + concated.Substring(0, concated.Length - 2) + "))";
+                return "(" + ResolveScript(property, parameters) + " IN (" + concated.Substring(0, concated.Length - 2) + "))";
             }
 
             object value = Expression.Lambda(expression).Compile().DynamicInvoke();

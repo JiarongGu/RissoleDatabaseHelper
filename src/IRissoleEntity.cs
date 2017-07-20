@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq.Expressions;
 using System.Text;
 
 namespace RissoleDatabaseHelper
@@ -24,9 +25,9 @@ namespace RissoleDatabaseHelper
 
         IRissoleCommand<T> Update(IList<T> model);
         
-        IRissoleCommand<T> Select(Func<T, object> prdicate);
+        IRissoleCommand<T> Select(Expression<Func<T, object>> prdicate);
 
-        IRissoleCommand<T> Select<TFrom>(Func<T, object> prdicate);
+        IRissoleCommand<T> Select<TFrom>(Expression<Func<T, object>> prdicate);
 
         IRissoleCommand<T> Select(string script);
     }

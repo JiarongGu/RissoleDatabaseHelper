@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -13,18 +14,71 @@ namespace RissoleDatabaseHelper
         private IRissoleCommand<T> _parentCommand; 
 
         private IDbCommand _command;
-        private ICollection<IDbDataParameter> _parameters;
+        private List<IDbDataParameter> _parameters;
 
         private string _script;
 
-        public string Script { get => _script; set => _script = value; }
-        public ICollection<IDbDataParameter> Parameters { get => _parameters; }
-        public IDbConnection Connection { get => _dbConnection; set => _dbConnection = value; }
+        public string Script
+        {
+            get { return _script; }
+            set { _script = value; }
+        }
 
+        public List<IDbDataParameter> Parameters
+        {
+            get
+            {
+                if (_parentCommand == null)
+                    return _parameters;
+                return _parentCommand.Parameters;
+            }
+
+            set
+            {
+                if (_parentCommand == null)
+                {
+                    _parameters = value;
+                }
+                else
+                {
+                    _parentCommand.Parameters = value;
+                }
+            }
+        }
+
+        public IDbConnection Connection {
+            get
+            {
+                if (_parentCommand == null)
+                    return _dbConnection;
+                return _parentCommand.Connection;
+            }
+
+            set
+            {
+                if (_parentCommand == null)
+                {
+                    _dbConnection = value;
+                }
+                else
+                {
+                    _parentCommand.Connection = value;
+                }
+            }
+        }
+       
         internal RissoleCommand(IDbConnection dbConnection, IRissoleProvider rissoleProvider)
         {
             _dbConnection = dbConnection;
             _rissoleProvider = rissoleProvider;
+            _parameters = new List<IDbDataParameter>();
+        }
+
+        internal RissoleCommand(RissoleCommand<T> rissoleCommand)
+        {
+            _parentCommand = rissoleCommand;
+            _rissoleProvider = rissoleCommand._rissoleProvider;
+            _script += rissoleCommand._script;
         }
 
         public int ExecuteNonQuery()
@@ -47,11 +101,6 @@ namespace RissoleDatabaseHelper
             _dbConnection.Close();
         }
 
-        public IRissoleCommand<T> Where(Func<T, bool> prdicate)
-        {
-            throw new NotImplementedException();
-        }
-
         public IRissoleCommand<T> First(T model)
         {
             throw new NotImplementedException();
@@ -61,12 +110,64 @@ namespace RissoleDatabaseHelper
         {
             throw new NotImplementedException();
         }
+        
+        public IRissoleCommand<T> Join<TJoin>(Expression<Func<T, TJoin, bool>> prdicate)
+        {
+            var rissoleScript = _rissoleProvider.GetJoinScript(prdicate);
 
-        public IRissoleCommand<T> Join<TJoin>(Func<T, TJoin, bool> prdicate)
+            var rissoleCommand = new RissoleCommand<T>(this);
+            rissoleCommand.Script += " " + rissoleScript.Script;
+            rissoleCommand.Parameters.AddRange(rissoleScript.Parameters);
+
+            return rissoleCommand;
+        }
+
+        public IRissoleCommand<T> Where(Expression<Func<T, bool>> prdicate)
+        {
+            var rissoleScript = _rissoleProvider.GetWhereCondition(prdicate);
+
+            var rissoleCommand = new RissoleCommand<T>(this);
+            rissoleCommand.Script += " " + rissoleScript.Script;
+            rissoleCommand.Parameters.AddRange(rissoleScript.Parameters);
+
+            return rissoleCommand;
+        }
+
+        public IRissoleCommand<T> Custom(string script, List<IDbDataParameter> parameters)
+        {
+            var rissoleCommand = new RissoleCommand<T>(this);
+            rissoleCommand.Script += " " + script;
+            rissoleCommand.Parameters.AddRange(Parameters);
+
+            return rissoleCommand;
+        }
+        
+        public IRissoleCommand<T> Custom(string script, params IDbDataParameter[] parameters)
+        {
+            return Custom(script, new List<IDbDataParameter>(parameters));
+        }
+
+        public IDbCommand BuildCommand()
+        {
+            if (_command == null)
+            {
+                _command = _dbConnection.CreateCommand();
+                _command.CommandText = _script;
+
+                foreach (var parameter in Parameters)
+                {
+                    _command.Parameters.Add(parameter);
+                }
+            }
+
+            return _command;
+        }
+
+        public IRissoleCommand<T> First(Expression<Func<T, bool>> prdicate)
         {
             throw new NotImplementedException();
         }
-
+        
         public T First()
         {
             throw new NotImplementedException();
@@ -80,19 +181,7 @@ namespace RissoleDatabaseHelper
         public List<T> ToList()
         {
             var executor = _rissoleProvider.GetRissoleExecutor<T>(_dbConnection);
-            return executor.ExecuteReader(Command());
-        }
-
-        public IDbCommand Command()
-        {
-            if (_command == null)
-            {
-                _command = _dbConnection.CreateCommand();
-                _command.CommandText = _script;
-
-            }
-
-            return _command;
+            return executor.ExecuteReader(BuildCommand());
         }
     }
 }

@@ -9,7 +9,7 @@ namespace RissoleDatabaseHelperUnitTest.Mocks
     [Table("accounts")]
     public class Account
     {
-        [Column(Name = "account_id", IsComputed = true, DataType = typeof(Guid))]
+        [Column("account_id")]
         [Key(KeyType.PrimaryKey, IsComputed = true)]
         public Guid AccountId { get; set; }
 
