@@ -39,17 +39,17 @@ namespace RissoleDatabaseHelper
 
         private RissoleScript ResolveScript(Expression expression, Dictionary<ParameterExpression, RissoleTable> parameters, int stack)
         {
-            if (expression is UnaryExpression) return ResolveUnaryExpression((UnaryExpression)expression, parameters, stack++);
+            if (expression is UnaryExpression) return ResolveUnaryExpression((UnaryExpression)expression, parameters, ++stack);
 
-            if (expression is BinaryExpression) return ResolveBinaryExpression((BinaryExpression)expression, parameters, stack++);
+            if (expression is BinaryExpression) return ResolveBinaryExpression((BinaryExpression)expression, parameters, ++stack);
 
-            if (expression is ConstantExpression) return ResolveConstantExpression((ConstantExpression)expression, stack++);
+            if (expression is ConstantExpression) return ResolveConstantExpression((ConstantExpression)expression, ++stack);
 
-            if (expression is MemberExpression) return ResolveMemberExpression((MemberExpression)expression, parameters, stack++);
+            if (expression is MemberExpression) return ResolveMemberExpression((MemberExpression)expression, parameters, ++stack);
 
-            if (expression is MethodCallExpression) return ResolveMethodCallExpression((MethodCallExpression)expression, parameters, stack++);
+            if (expression is MethodCallExpression) return ResolveMethodCallExpression((MethodCallExpression)expression, parameters, ++stack);
 
-            if (expression is ParameterExpression) return ResolveTypeAccessException((ParameterExpression)expression, parameters, stack++);
+            if (expression is ParameterExpression) return ResolveTypeAccessException((ParameterExpression)expression, parameters, ++stack);
 
             throw new Exception("Unsupported expression: " + expression.GetType().Name);
         }
@@ -68,7 +68,7 @@ namespace RissoleDatabaseHelper
         private RissoleScript ResolveUnaryExpression(UnaryExpression expression, 
             Dictionary<ParameterExpression, RissoleTable> parameters, int stack)
         {
-            var right = ResolveScript(expression.Operand, parameters, stack++);
+            var right = ResolveScript(expression.Operand, parameters, ++stack);
             var node = NodeTypeToString(expression.NodeType, right.Parameters.FirstOrDefault().Value == null);
 
             var script = $"({node} {right.Script})";
@@ -80,8 +80,8 @@ namespace RissoleDatabaseHelper
         private RissoleScript ResolveBinaryExpression(BinaryExpression expression,
             Dictionary<ParameterExpression, RissoleTable> parameters, int stack)
         {
-            var left = ResolveScript(expression.Left, parameters, stack++);
-            var right = ResolveScript(expression.Right, parameters, stack++);
+            var left = ResolveScript(expression.Left, parameters, ++stack);
+            var right = ResolveScript(expression.Right, parameters, ++stack);
             var isNull = right.Parameters.Count > 0 && right.Parameters.First().Value == null;
             var node = NodeTypeToString(expression.NodeType, isNull);
 
@@ -129,21 +129,29 @@ namespace RissoleDatabaseHelper
             // LIKE queries:
             if (expression.Method == typeof(string).GetMethod("Contains", new[] { typeof(string) }))
             {
-                var script = "(" + ResolveScript(expression.Object, parameters, stack++) + " LIKE '%"
-                    + ResolveScript(expression.Arguments[0], parameters, stack++) + "%')";
-                return new RissoleScript(script);
+                var left = ResolveScript(expression.Object, parameters, ++stack);
+                var right = ResolveScript(expression.Arguments[0], parameters, ++stack);
+                var script = $"({left.Script} LIKE '%{right.Script}%')";
+
+                return new RissoleScript(script, left.Parameters, right.Parameters);
             }
+
             if (expression.Method == typeof(string).GetMethod("StartsWith", new[] { typeof(string) }))
             {
-                var script = "(" + ResolveScript(expression.Object, parameters, stack++) + " LIKE '" +
-                    ResolveScript(expression.Arguments[0], parameters, stack++) + "%')";
-                return new RissoleScript(script);
+                var left = ResolveScript(expression.Object, parameters, ++stack);
+                var right = ResolveScript(expression.Arguments[0], parameters, ++stack);
+                var script = $"({left.Script} LIKE '{right.Script}%')";
+
+                return new RissoleScript(script, left.Parameters, right.Parameters);
             }
+
             if (expression.Method == typeof(string).GetMethod("EndsWith", new[] { typeof(string) }))
             {
-                var script = "(" + ResolveScript(expression.Object, parameters, stack++) + " LIKE '%" +
-                    ResolveScript(expression.Arguments[0], parameters, stack++) + "')";
-                return new RissoleScript(script);
+                var left = ResolveScript(expression.Object, parameters, ++stack);
+                var right = ResolveScript(expression.Arguments[0], parameters, ++stack);
+                var script = $"({left.Script} LIKE '%{right.Script}')";
+
+                return new RissoleScript(script, left.Parameters, right.Parameters);
             }
 
             if (expression.Method.Name == "Contains")
@@ -178,7 +186,7 @@ namespace RissoleDatabaseHelper
                     return ValueToRissoleScript(false, stack);
                 }
 
-                var script = "(" + ResolveScript(property, parameters, stack++) + " IN (" + concated.Substring(0, concated.Length - 2) + "))";
+                var script = "(" + ResolveScript(property, parameters, ++stack) + " IN (" + concated.Substring(0, concated.Length - 2) + "))";
 
                 return new RissoleScript(script);
             }
@@ -216,12 +224,7 @@ namespace RissoleDatabaseHelper
 
             return quote ? $"'{convert}'" : convert;
         }
-
-        private static bool IsEnumerableType(Type type)
-        {
-            return type.GetInterfaces().Any(i => i.IsGenericParameter && i.GetGenericTypeDefinition() == typeof(IEnumerable<>));
-        }
-
+        
         private static object GetValue(Expression member)
         {
             var objectMember = Expression.Convert(member, typeof(object));

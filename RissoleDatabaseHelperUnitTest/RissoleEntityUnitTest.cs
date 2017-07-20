@@ -19,14 +19,20 @@ namespace RissoleDatabaseHelperUnitTest
         }
 
         [TestMethod]
-        public void TestMethod1()
+        public void TestCommandBuildNoExeception1()
         {
             IRissoleEntity<Account> rissoleEntity = new RissoleEntity<Account>(_connection);
 
             var command = rissoleEntity.Select(x => x).Join<User>((x, y) => x.AccountId == y.UserId)
                 .Where(x => x.AccountId == Guid.NewGuid()).Custom("ORDER BY 1 DESC");
+        }
 
-            var account = command.ToList();
+        [TestMethod]
+        public void TestCommandBuildNoExeception2()
+        {
+            IRissoleEntity<Account> rissoleEntity = new RissoleEntity<Account>(_connection);
+
+            var command = rissoleEntity.Select(x => x).Where(x => x.Email.Contains("@info.com"));
         }
 
         [TestMethod]
@@ -37,7 +43,5 @@ namespace RissoleDatabaseHelperUnitTest
             var command = rissoleEntity.Select(x => x).Where(x => x.AccountId == id);
             Assert.AreEqual(command.Parameters.Count, 1);
         }
-
-
     }
 }

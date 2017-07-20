@@ -19,11 +19,7 @@ namespace RissoleDatabaseHelper
         IDbConnection Connection { get; set; }
         
         IRissoleCommand<T> Where(Expression<Func<T, bool>> prdicate);
-
-        IRissoleCommand<T> First(T model);
-
-        IRissoleCommand<T> First(Expression<Func<T, bool>> prdicate);
-
+       
         IRissoleCommand<T> Join<TJoin> (Expression<Func<T, TJoin, bool>> prdicate);
 
         IRissoleCommand<T> Custom(string script, List<IDbDataParameter> parameters);

@@ -1,9 +1,9 @@
-﻿using RissoleDatabaseHelper.Models;
+﻿using RissoleDatabaseHelper.Enums;
+using RissoleDatabaseHelper.Models;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -25,7 +25,7 @@ namespace RissoleDatabaseHelper
 
             foreach (var column in table.Columns)
             {
-                if (column.IsPrimaryKey == true)
+                if (column.Keys.Exists(x => x.Type == KeyType.PrimaryKey))
                 {
                     if (whereCondition.Length > 0) whereCondition.Append(" AND ");
                     whereCondition.Append(BuildEqualsCondition(column));
@@ -64,7 +64,7 @@ namespace RissoleDatabaseHelper
 
         internal string BuildUpdateSingle(RissoleTable table)
         {
-            List<RissoleColumn> primaryKeyData = table.Columns.Where(x => x.IsPrimaryKey).ToList();
+            List<RissoleColumn> primaryKeyData = table.Columns.Where(x => x.Keys.Exists(y => y.Type == KeyType.PrimaryKey)).ToList();
             List<RissoleColumn> modifiableData = table.Columns.Where(x => !x.IsGenerated).ToList();
 
             string whereCondition = BuildAppendedEqualsCodition(primaryKeyData, " AND ");
@@ -75,7 +75,7 @@ namespace RissoleDatabaseHelper
 
         internal string BuildDeleteSingle(RissoleTable table)
         {
-            List<RissoleColumn> primaryKeyData = table.Columns.Where(x => x.IsPrimaryKey).ToList();
+            List<RissoleColumn> primaryKeyData = table.Columns.Where(x => x.Keys.Exists(y => y.Type == KeyType.PrimaryKey)).ToList();
             string whereCondition = BuildAppendedEqualsCodition(primaryKeyData, " AND ");
 
             return $"DELETE FROM {table.Name} WHERE {whereCondition}";

@@ -102,16 +102,6 @@ namespace RissoleDatabaseHelper
         {
             _dbConnection.Close();
         }
-
-        public IRissoleCommand<T> First(T model)
-        {
-            throw new NotImplementedException();
-        }
-
-        public IRissoleCommand<T> First(Func<T, bool> prdicate)
-        {
-            throw new NotImplementedException();
-        }
         
         public IRissoleCommand<T> Join<TJoin>(Expression<Func<T, TJoin, bool>> prdicate)
         {

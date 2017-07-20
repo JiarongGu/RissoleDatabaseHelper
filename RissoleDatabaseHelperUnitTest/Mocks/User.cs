@@ -9,8 +9,8 @@ namespace RissoleDatabaseHelperUnitTest.Mocks
     [Table("users")]
     public class User
     {
-        [Column("user_id")]
-        [Key(KeyType.PrimaryKey, IsComputed = true)]
+        [Column("user_id", IsComputed = true)]
+        [Key(KeyType.PrimaryKey)]
         public Guid UserId { get; set; }
 
         [Column("firstname")]

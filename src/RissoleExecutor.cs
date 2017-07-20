@@ -202,7 +202,7 @@ namespace RissoleDatabaseHelper
             }
         }
 
-        private IDbCommand SetParameters<T>(IDbCommand command, T model, RissoleTable table)
+        private IDbCommand SetParameters(IDbCommand command, T model, RissoleTable table)
         {
             foreach (var column in table.Columns)
             {

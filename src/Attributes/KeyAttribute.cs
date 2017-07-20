@@ -27,7 +27,5 @@ namespace RissoleDatabaseHelper.Attributes
         public string Column { get; set; }
 
         public KeyType Type { get; set; }
-
-        public bool IsComputed { get; set;}
     }
 }

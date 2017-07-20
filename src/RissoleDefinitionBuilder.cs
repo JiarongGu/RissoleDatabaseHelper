@@ -82,7 +82,6 @@ namespace RissoleDatabaseHelper
                         case "Table": key.TableName = (string)value; break;
                         case "Column": key.ColumnName = (string)value; break;
                         case "Type": key.Type = (KeyType)value; break;
-                        case "IsComputed": key.IsComputed = (bool)value; break;
                         default: throw new Exception("Unknow Attribute: " + name);
                     }
                 }

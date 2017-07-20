@@ -22,7 +22,6 @@ namespace RissoleDatabaseHelper.Models
         public string Name { set; get; }
         public Type DataType { set; get; }
         public bool IsGenerated { set; get; }
-        public bool IsPrimaryKey { set; get; }
         public bool IsComputed { set; get; }
         public List<RissoleKey> Keys { set; get;}
     }

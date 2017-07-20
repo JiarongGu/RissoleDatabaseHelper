@@ -1,4 +1,5 @@
-﻿using RissoleDatabaseHelper.Internals;
+﻿using RissoleDatabaseHelper.Enums;
+using RissoleDatabaseHelper.Internals;
 using RissoleDatabaseHelper.Models;
 using System;
 using System.Collections.Generic;
@@ -193,7 +194,7 @@ namespace RissoleDatabaseHelper
         /// <returns></returns>
         public T Select(object key)
         {
-            var columnDefinition = _table.Columns.Where(x => x.IsPrimaryKey).FirstOrDefault();
+            var columnDefinition = _table.Columns.Where(x => x.Keys.Exists(y => y.Type == KeyType.PrimaryKey)).FirstOrDefault();
 
             if (columnDefinition == null) return default(T); //no primary key found
 
@@ -238,7 +239,7 @@ namespace RissoleDatabaseHelper
 
         public bool Delete(object key)
         {
-            var columnDefinitions = _table.Columns.Where(x => x.IsPrimaryKey).ToList();
+            var columnDefinitions = _table.Columns.Where(x => x.Keys.Exists(y => y.Type == KeyType.PrimaryKey)).ToList();
             
             if (columnDefinitions.Count != 1) return false; //no primary key or multiple primary key found
 
