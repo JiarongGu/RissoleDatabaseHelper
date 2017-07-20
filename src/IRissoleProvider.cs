@@ -19,6 +19,6 @@ namespace RissoleDatabaseHelper
 
         RissoleCommandExecutor<T> GetRissoleExecutor<T>();
 
-        RissoleCommandExecutor<T> GetRissoleExecutor<T>(IDbConnection dbConnection);
+        IRissoleExecutor<T> GetRissoleExecutor<T>(IDbConnection dbConnection);
     }
 }

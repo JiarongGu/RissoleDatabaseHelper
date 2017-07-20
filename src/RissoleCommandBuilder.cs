@@ -17,11 +17,6 @@ namespace RissoleDatabaseHelper
         {
             this._dbConnection = dbConnection;
         }
-        
-        internal string BuildSelectManyToMany<TFrom>(TFrom model, RissoleTable from, RissoleTable bind, RissoleTable output)
-        {
-            return $"{BuildSelectAll(output)} {BuildJoin(output, bind)} {BuildJoin(bind, from)} WHERE {BuildWhereConditionPrimaryKey(from)}";
-        }
 
         internal string BuildSelectSingle(RissoleTable table)
         {
@@ -86,76 +81,6 @@ namespace RissoleDatabaseHelper
             return $"DELETE FROM {table.Name} WHERE {whereCondition}";
         }
         
-        private string BuildSelectAll(RissoleTable table)
-        {
-            return $"SELECT {BuildSelectAllColumn(table)} FROM {table.Name}";
-        }
-
-        private string BuildJoin(RissoleTable from, RissoleTable on)
-        {
-            List<RissoleColumn> foreignKeyColumns = on.Columns.Where(x => x.Keys != null && x.Keys.Count(y => y.TableName == from.Name) > 0).ToList();
-
-            RissoleTable primaryTable = from;
-            RissoleTable foreignTable = on;
-
-            if (foreignKeyColumns.Count == 0)
-            {
-                foreignKeyColumns = from.Columns.Where(x => x.Keys != null
-                    && x.Keys.Count(y => y.TableName == on.Name) > 0).ToList();
-                primaryTable = on;
-                foreignTable = from;
-            }
-            
-            var joinConditions = new StringBuilder();
-            foreach (var foreignKeyColumn in foreignKeyColumns)
-            {
-                List<RissoleKey> foreignKeys = foreignKeyColumn.Keys.Where(x => x.TableName == primaryTable.Name).ToList();
-
-                if (foreignKeys.Count == 0)
-                    continue;
-
-                foreach(var foreignKey in foreignKeys)
-                {
-                    if (joinConditions.Length > 0)
-                        joinConditions.Append(" AND ");
-
-                    joinConditions.Append($"{foreignTable.Name}.{foreignKey.ColumnName} = {primaryTable.Name}.{foreignKey.ColumnName}");
-                }
-            }
-
-            var script = $"JOIN {on.Name} ON {joinConditions.ToString()}";
-            return script;
-        }
-
-        private string BuildSelectAllColumn(RissoleTable table)
-        {
-            var selectedColumns = new StringBuilder();
-            foreach (var column in table.Columns)
-            {
-                if (selectedColumns.Length > 0)
-                    selectedColumns.Append(", ");
-
-                selectedColumns.Append($"{table.Name}.{column.Name}");
-            }
-            return selectedColumns.ToString();
-        }
-        
-        private string BuildWhereConditionPrimaryKey(RissoleTable table)
-        {
-            var primaryKeys = table.Columns.Where(x => x.IsPrimaryKey).ToList();
-            var whereConditions = new StringBuilder();
-
-            foreach (var primaryKey in primaryKeys)
-            {
-                if (whereConditions.Length > 0)
-                    whereConditions.Append(" AND ");
-
-                whereConditions.Append(BuildEqualsCondition(primaryKey));
-            }
-
-            return whereConditions.ToString();
-        }
-
         private string BuildEqualsCondition(RissoleColumn column)
         {
             return $"{column.Name} = @{column.Property.Name}";

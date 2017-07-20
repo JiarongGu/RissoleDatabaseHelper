@@ -25,6 +25,7 @@ namespace RissoleDatabaseHelperUnitTest
 
             var command = rissoleEntity.Select(x => x).Join<User>((x, y) => x.AccountId == y.UserId)
                 .Where(x => x.AccountId == Guid.NewGuid()).Custom("ORDER BY 1 DESC");
+
             var account = command.ToList();
         }
 

@@ -79,9 +79,9 @@ namespace RissoleDatabaseHelper
             throw new NotImplementedException();
         }
 
-        public RissoleCommandExecutor<T> GetRissoleExecutor<T>(IDbConnection dbConnection)
+        public IRissoleExecutor<T> GetRissoleExecutor<T>(IDbConnection dbConnection)
         {
-            throw new NotImplementedException();
+            return new RissoleExecutor<T>(dbConnection, GetRissoleTable<T>());
         }
 
         public static IRissoleProvider Instance {

@@ -44,6 +44,7 @@ namespace RissoleDatabaseHelper
         {
             throw new NotImplementedException();
         }
+
         public IRissoleCommand<T> Update(IList<T> model)
         {
             throw new NotImplementedException();
@@ -79,6 +80,9 @@ namespace RissoleDatabaseHelper
             throw new NotImplementedException();
         }
 
-        public IDbConnection Connection { get => _dbConnection; set => _dbConnection = value; }
+        public IDbConnection Connection {
+            get { return _dbConnection; }
+            set { _dbConnection = value; }
+        }
     }
 }

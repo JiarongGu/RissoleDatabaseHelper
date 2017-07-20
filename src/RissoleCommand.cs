@@ -139,7 +139,7 @@ namespace RissoleDatabaseHelper
         {
             var rissoleCommand = new RissoleCommand<T>(this);
             rissoleCommand.Script += " " + script;
-            rissoleCommand.Parameters.AddRange(Parameters);
+            rissoleCommand.Parameters.AddRange(parameters);
             
             return rissoleCommand;
         }
@@ -168,7 +168,7 @@ namespace RissoleDatabaseHelper
         {
             if (_command == null)
             {
-                _command = _dbConnection.CreateCommand();
+                _command = Connection.CreateCommand();
                 _command.CommandText = _script;
 
                 foreach (var parameter in Parameters)

@@ -23,7 +23,6 @@ namespace RissoleDatabaseHelper
         private readonly RissoleDefinitionBuilder _definitionBuilder;
 
         private Dictionary<string, string> _scriptDictionary;
-        private Dictionary<Type, RissoleTable> _otherDefinitions;
 
         public RissoleCommandExecutor(DbConnection connection)
         {
@@ -33,7 +32,6 @@ namespace RissoleDatabaseHelper
             _definitionBuilder = new RissoleDefinitionBuilder();
 
             _scriptDictionary = new Dictionary<string, string>();
-            _otherDefinitions = new Dictionary<Type, RissoleTable>();
 
             _table = _definitionBuilder.BuildRissoleTable(typeof(T));
         }
@@ -205,31 +203,6 @@ namespace RissoleDatabaseHelper
 
             return Select(model);
         }
-
-        /// <summary>
-        /// Get list of T by other model, use bind model as many to many mapping table
-        /// </summary>
-        /// <typeparam name="TFrom"></typeparam>
-        /// <param name="model"></param>
-        /// <param name="bind"></param>
-        /// <returns>List of T model</returns>
-        public List<T> Select<TFrom>(TFrom model, Type bind)
-        {
-            var fromDefinition = GetOtherTypeDefinition(typeof(TFrom));
-            var bindDefinition = GetOtherTypeDefinition(bind);
-
-            var scriptName = GetScriptName("SelectListT_", typeof(TFrom), bind);
-            var script = GetScriptFromDictionary(scriptName);
-
-            if (script == null)
-            {
-                script = _commandBuilder.BuildSelectManyToMany(model, fromDefinition, bindDefinition, _table);
-                _scriptDictionary.Add(scriptName, script);
-            }
-
-            var command = _commandBuilder.CreateCommand(script, model, fromDefinition);
-            return ExecuteReader(command);
-        }
         
         public bool Update(T model)
         {
@@ -346,14 +319,6 @@ namespace RissoleDatabaseHelper
             return model;
         }
         
-        private RissoleTable GetOtherTypeDefinition(Type type)
-        {
-            if (_otherDefinitions.ContainsKey(type))
-                return _otherDefinitions[type];
-
-            return _definitionBuilder.BuildRissoleTable(type);
-        }
-
         private string GetScriptName(params object[] args)
         {
             var scriptName = new StringBuilder();
