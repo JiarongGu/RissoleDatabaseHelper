@@ -12,6 +12,8 @@ namespace RissoleDatabaseHelper.Core
 
         object ExecuteScalar();
 
+        List<T> ExecuteReader();
+
         string Script { get; set; }
 
         List<IDbDataParameter> Parameters { get; set; }

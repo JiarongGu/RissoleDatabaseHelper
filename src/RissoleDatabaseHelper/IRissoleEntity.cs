@@ -11,11 +11,12 @@ namespace RissoleDatabaseHelper.Core
         // properties
         IDbConnection Connection { get; set; }
 
-
         // functions
-        IRissoleCommand<T> Build(string script, T model);
+        IRissoleCommand<T> Custom(string script, T model);
 
-        IRissoleCommand<T> Build(IDbCommand command);
+        IRissoleCommand<T> Custom(string script, List<IDbDataParameter> parameters);
+
+        IRissoleCommand<T> Custom(string script, params IDbDataParameter[] parameters);
 
         IRissoleCommand<T> Insert(T model);
 
@@ -31,8 +32,6 @@ namespace RissoleDatabaseHelper.Core
         
         IRissoleCommand<T> Select(Expression<Func<T, object>> prdicate);
 
-        IRissoleCommand<T> Select<TFrom>(Expression<Func<T, object>> prdicate);
-
-        IRissoleCommand<T> Select(string script);
+        IRissoleCommand<T> First(Expression<Func<T, object>> prdicate);
     }
 }

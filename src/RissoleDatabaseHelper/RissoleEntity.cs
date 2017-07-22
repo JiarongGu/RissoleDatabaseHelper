@@ -20,16 +20,6 @@ namespace RissoleDatabaseHelper.Core
             _rissoleTable = _rissoleProvider.GetRissoleTable<T>();
         }
 
-        public IRissoleCommand<T> Build(string script, T model)
-        {
-            throw new NotImplementedException();
-        }
-
-        public IRissoleCommand<T> Build(IDbCommand command)
-        {
-            throw new NotImplementedException();
-        }
-
         public IRissoleCommand<T> Delete(T model)
         {
             throw new NotImplementedException();
@@ -60,14 +50,14 @@ namespace RissoleDatabaseHelper.Core
             return rissoleCommand;
         }
 
-        public IRissoleCommand<T> Select<TFrom>(Expression<Func<T, object>> prdicate)
+        public IRissoleCommand<T> First(Expression<Func<T, object>> prdicate)
         {
-            throw new NotImplementedException();
-        }
+            var rissoleCommand = new RissoleCommand<T>(_dbConnection, _rissoleProvider);
+            var rissoleScript = _rissoleProvider.GetSelectCondition(prdicate);
 
-        public IRissoleCommand<T> Select(string script)
-        {
-            throw new NotImplementedException();
+            rissoleCommand.Script = rissoleScript.Script;
+
+            return rissoleCommand;
         }
 
         public IRissoleCommand<T> Insert(T model)
@@ -76,6 +66,21 @@ namespace RissoleDatabaseHelper.Core
         }
 
         public IRissoleCommand<T> Insert(List<T> model)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IRissoleCommand<T> Custom(string script, T model)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IRissoleCommand<T> Custom(string script, List<IDbDataParameter> parameters)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IRissoleCommand<T> Custom(string script, params IDbDataParameter[] parameters)
         {
             throw new NotImplementedException();
         }

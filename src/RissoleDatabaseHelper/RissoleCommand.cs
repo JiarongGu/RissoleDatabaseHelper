@@ -3,6 +3,7 @@ using RissoleDatabaseHelper.Core.Utils;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
@@ -82,26 +83,6 @@ namespace RissoleDatabaseHelper.Core
             _rissoleProvider = rissoleCommand._rissoleProvider;
             _script += rissoleCommand._script;
         }
-
-        public int ExecuteNonQuery()
-        {
-            throw new NotImplementedException();
-        }
-
-        public async Task<int> ExecuteNonQueryAsync()
-        {
-            return await Task.Run(() => ExecuteNonQuery());
-        }
-
-        public object ExecuteScalar()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Dispose()
-        {
-            _dbConnection.Close();
-        }
         
         public IRissoleCommand<T> Join<TJoin>(Expression<Func<T, TJoin, bool>> prdicate)
         {
@@ -169,26 +150,50 @@ namespace RissoleDatabaseHelper.Core
 
             return _command;
         }
-
-        public IRissoleCommand<T> First(Expression<Func<T, bool>> prdicate)
-        {
-            throw new NotImplementedException();
-        }
         
         public T First()
         {
-            throw new NotImplementedException();
+            var executor = new RissoleExecutor<T>(this);
+            return executor.ExecuteReader(BuildCommand()).First();
         }
 
         public T FirstOrDefault()
         {
-            throw new NotImplementedException();
+            var executor = new RissoleExecutor<T>(this);
+            return executor.ExecuteReader(BuildCommand()).FirstOrDefault();
         }
 
         public List<T> ToList()
         {
-            var executor = _rissoleProvider.GetRissoleExecutor<T>(_dbConnection);
+            return ExecuteReader();
+        }
+
+        public List<T> ExecuteReader()
+        {
+            var executor = new RissoleExecutor<T>(this);
             return executor.ExecuteReader(BuildCommand());
+        }
+        
+        public int ExecuteNonQuery()
+        {
+            var executor = new RissoleExecutor<T>(this);
+            return executor.ExecuteNonQuery(BuildCommand());
+        }
+
+        public async Task<int> ExecuteNonQueryAsync()
+        {
+            return await Task.Run(() => ExecuteNonQuery());
+        }
+
+        public object ExecuteScalar()
+        {
+            var executor = new RissoleExecutor<T>(this);
+            return executor.ExecuteScalar(BuildCommand());
+        }
+
+        public void Dispose()
+        {
+            _dbConnection.Close();
         }
     }
 }

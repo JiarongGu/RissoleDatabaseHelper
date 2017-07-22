@@ -10,15 +10,15 @@ using System.Text.RegularExpressions;
 
 namespace RissoleDatabaseHelper.Core
 {
-    public class RissoleExecutor<T> : IRissoleExecutor<T>
+    public class RissoleExecutor<T> : IRissoleExecutor<T>, IDisposable
     {
-        private readonly IDbConnection _dbConnection;
+        private readonly IRissoleCommand<T> _rissoleCommand;
         private readonly RissoleTable _table;
 
-        internal RissoleExecutor(IDbConnection dbConnection, RissoleTable table)
+        internal RissoleExecutor(IRissoleCommand<T> rissoleCommand)
         {
-            _dbConnection = dbConnection;
-            _table = table;
+            _rissoleCommand = rissoleCommand;
+            _table = RissoleProvider.Instance.GetRissoleTable<T>();
         }
 
         /// <summary>
@@ -28,12 +28,12 @@ namespace RissoleDatabaseHelper.Core
         /// <returns></returns>
         public List<T> ExecuteReader(IDbCommand command)
         {
-            command.Connection = _dbConnection;
+            command.Connection = _rissoleCommand.Connection;
             List<T> models = new List<T>();
 
             try
             {
-                _dbConnection.Open();
+                command.Connection.Open();
                 IDataReader reader = command.ExecuteReader();
 
                 while (reader.Read())
@@ -48,7 +48,7 @@ namespace RissoleDatabaseHelper.Core
             finally
             {
                 command.Dispose();
-                _dbConnection.Close();
+                command.Connection.Close();
             }
 
             return models;
@@ -62,12 +62,12 @@ namespace RissoleDatabaseHelper.Core
         /// <returns></returns>
         public int ExecuteNonQuery(IDbCommand command)
         {
-            command.Connection = _dbConnection;
+            command.Connection = _rissoleCommand.Connection;
             int result;
 
             try
             {
-                _dbConnection.Open();
+                command.Connection.Open();
                 result = command.ExecuteNonQuery();
             }
             catch (Exception ex)
@@ -77,7 +77,7 @@ namespace RissoleDatabaseHelper.Core
             finally
             {
                 command.Dispose();
-                _dbConnection.Close();
+                command.Connection.Close();
             }
 
             return result;
@@ -90,12 +90,12 @@ namespace RissoleDatabaseHelper.Core
         /// <returns></returns>
         public object ExecuteScalar(IDbCommand command)
         {
-            command.Connection = _dbConnection;
+            command.Connection = _rissoleCommand.Connection;
             object result;
 
             try
             {
-                _dbConnection.Open();
+                command.Connection.Open();
                 result = command.ExecuteScalar();
             }
             catch (Exception ex)
@@ -105,7 +105,7 @@ namespace RissoleDatabaseHelper.Core
             finally
             {
                 command.Dispose();
-                _dbConnection.Close();
+                command.Connection.Close();
             }
 
             return result;
@@ -223,6 +223,11 @@ namespace RissoleDatabaseHelper.Core
             }
 
             return command;
+        }
+
+        public void Dispose()
+        {
+            throw new NotImplementedException();
         }
     }
 }
