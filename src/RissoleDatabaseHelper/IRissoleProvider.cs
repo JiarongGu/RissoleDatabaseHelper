@@ -18,9 +18,7 @@ namespace RissoleDatabaseHelper.Core
         
         RissoleScript GetPrimaryScript<T>(T model, int stack);
 
-        RissoleScript GetPrimaryScript<T>(Dictionary<string, object> keys, int stack);
-
-        // without paramters
+        // without parameters
         RissoleScript GetSelectScript<T>(Expression<Func<T, object>> expression);
 
         RissoleScript GetFirstScript<T>(Expression<Func<T, object>> expression);

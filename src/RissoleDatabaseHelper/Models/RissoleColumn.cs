@@ -7,9 +7,12 @@ namespace RissoleDatabaseHelper.Core.Models
 {
     internal class RissoleColumn
     {
-        public RissoleColumn() { }
+        public RissoleColumn() {
+            Keys = new List<RissoleKey>();
+        }
 
         public RissoleColumn(PropertyInfo property)
+            :this()
         {
             Property = property;
             Name = property.Name;

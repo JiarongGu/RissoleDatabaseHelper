@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 
@@ -33,22 +34,10 @@ namespace RissoleDatabaseHelper.Core
         {
             var rissoleCommand = new RissoleCommand<T>(_dbConnection, _rissoleProvider);
             var rissoleScript = _rissoleProvider.GetDeleteScript<T>();
-            rissoleCommand.Script = rissoleScript.Script;
 
-
-
-            throw new NotImplementedException();
+            return rissoleCommand.Find(model);
         }
-
-        public IRissoleCommand<T> Delete(object primary)
-        {
-            var rissoleCommand = new RissoleCommand<T>(_dbConnection, _rissoleProvider);
-            var rissoleScript = _rissoleProvider.GetDeleteScript<T>();
-            rissoleCommand.Script = rissoleScript.Script;
-
-            throw new NotImplementedException();
-        }
-
+        
         public IRissoleCommand<T> Update(T model)
         {
             throw new NotImplementedException();
@@ -89,19 +78,19 @@ namespace RissoleDatabaseHelper.Core
             throw new NotImplementedException();
         }
 
-        public IRissoleCommand<T> Custom(string script, T model)
+        public IRissoleCommand<T> Custom(string script)
         {
-            throw new NotImplementedException();
+            return new RissoleCommand<T>(_dbConnection, _rissoleProvider, script);
         }
 
         public IRissoleCommand<T> Custom(string script, List<IDbDataParameter> parameters)
         {
-            throw new NotImplementedException();
+            return new RissoleCommand<T>(_dbConnection, _rissoleProvider, script, parameters);
         }
 
         public IRissoleCommand<T> Custom(string script, params IDbDataParameter[] parameters)
         {
-            throw new NotImplementedException();
+            return new RissoleCommand<T>(_dbConnection, _rissoleProvider, script, parameters.ToList());
         }
 
         public IDbConnection Connection {

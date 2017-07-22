@@ -12,7 +12,7 @@ namespace RissoleDatabaseHelper.Core
         IDbConnection Connection { get; set; }
 
         // functions
-        IRissoleCommand<T> Custom(string script, T model);
+        IRissoleCommand<T> Custom(string script);
 
         IRissoleCommand<T> Custom(string script, List<IDbDataParameter> parameters);
 
@@ -25,8 +25,6 @@ namespace RissoleDatabaseHelper.Core
         IRissoleCommand<T> Delete(Expression<Func<T, bool>> prdicate);
 
         IRissoleCommand<T> Delete(T model);
-
-        IRissoleCommand<T> Delete(object primary);
 
         IRissoleCommand<T> Update(T model);
 

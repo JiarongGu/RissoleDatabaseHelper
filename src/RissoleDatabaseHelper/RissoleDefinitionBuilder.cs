@@ -61,13 +61,12 @@ namespace RissoleDatabaseHelper.Core
 
         public List<RissoleKey> BuildRissoleKeys(PropertyInfo property)
         {
-            List<CustomAttributeData> keyAttributes = property.CustomAttributes.Where(x => x.AttributeType == typeof(KeyAttribute)).ToList();
-
-            if(keyAttributes.Count == 0)
-                return null;
-
             List<RissoleKey> keys = new List<RissoleKey>();
 
+            List<CustomAttributeData> keyAttributes = property.CustomAttributes.Where(x => x.AttributeType == typeof(KeyAttribute)).ToList();
+
+            if(keyAttributes.Count == 0) return keys;
+            
             foreach (var foreignKeyAttribute in keyAttributes)
             {
                 RissoleKey key = new RissoleKey();

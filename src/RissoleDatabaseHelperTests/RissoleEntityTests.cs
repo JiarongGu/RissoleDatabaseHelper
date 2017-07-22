@@ -54,6 +54,16 @@ namespace RissoleDatabaseHelperTests.Core
         }
 
         [TestMethod]
+        public void TestCommandBuildDelete1()
+        {
+            var account = new Account();
+            account.AccountId = Guid.NewGuid();
+            var command = _accounts.Delete(account);
+
+            Assert.AreEqual(command.Parameters.Count, 1);
+        }
+
+        [TestMethod]
         public void TestSelectionScriptBuild()
         {
             var id = Guid.NewGuid();

@@ -26,6 +26,8 @@ namespace RissoleDatabaseHelper.Core
        
         IRissoleCommand<T> Join<TJoin> (Expression<Func<T, TJoin, bool>> prdicate);
 
+        IRissoleCommand<T> Find(T model);
+
         IRissoleCommand<T> Custom(string script, List<IDbDataParameter> parameters);
 
         IRissoleCommand<T> Custom(string script, params IDbDataParameter[] parameters);

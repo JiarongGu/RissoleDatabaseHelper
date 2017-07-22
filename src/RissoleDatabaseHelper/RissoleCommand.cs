@@ -26,7 +26,19 @@ namespace RissoleDatabaseHelper.Core
             get { return _script; }
             set { _script = value; }
         }
-       
+
+        internal RissoleCommand(IDbConnection dbConnection, IRissoleProvider rissoleProvider, string script, List<IDbDataParameter> parameters)
+            : this(dbConnection, rissoleProvider, script)
+        {
+            _parameters = parameters;
+        }
+
+        internal RissoleCommand(IDbConnection dbConnection, IRissoleProvider rissoleProvider, string script)
+            :this(dbConnection, rissoleProvider)
+        {
+            _script = script;
+        }
+
         internal RissoleCommand(IDbConnection dbConnection, IRissoleProvider rissoleProvider)
         {
             _dbConnection = dbConnection;
@@ -105,6 +117,17 @@ namespace RissoleDatabaseHelper.Core
         public IRissoleCommand<T> Where(Expression<Func<T, bool>> prdicate)
         {
             var rissoleScript = _rissoleProvider.GetWhereScript(prdicate, Stack);
+
+            var rissoleCommand = new RissoleCommand<T>(this);
+            rissoleCommand.Script += " " + rissoleScript.Script;
+            rissoleCommand.Parameters.AddRange(GetParameterFromRissoleScript(rissoleScript));
+
+            return rissoleCommand;
+        }
+
+        public IRissoleCommand<T> Find(T model)
+        {
+            var rissoleScript = _rissoleProvider.GetPrimaryScript(model, Stack);
 
             var rissoleCommand = new RissoleCommand<T>(this);
             rissoleCommand.Script += " " + rissoleScript.Script;

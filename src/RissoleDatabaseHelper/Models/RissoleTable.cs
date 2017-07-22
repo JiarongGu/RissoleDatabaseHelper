@@ -8,9 +8,12 @@ namespace RissoleDatabaseHelper.Core.Models
 {
     internal class RissoleTable
     {
-        public RissoleTable() { }
+        public RissoleTable() {
+            Columns = new List<RissoleColumn>();
+        }
 
         public RissoleTable(Type type)
+            :this()
         {
             ReferenceType = type;
             Name = type.GetTypeInfo().Name;

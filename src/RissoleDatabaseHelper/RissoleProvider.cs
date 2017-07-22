@@ -98,17 +98,24 @@ namespace RissoleDatabaseHelper.Core
         public RissoleScript GetPrimaryScript<T>(T model, int stack)
         {
             var table = GetRissoleTable<T>();
-            var primary = table.Columns.Where(x => x.Keys.Exists(y => y.Type == KeyType.PrimaryKey)).ToList();
-            
+            var primaryKeys = table.Columns.Where(x => x.Keys.Exists(y => y.Type == KeyType.PrimaryKey)).ToList();
 
-            throw new NotImplementedException();
+            var parameters = new Dictionary<string, object>();
+            var columnNames = new List<string>();
+
+            foreach (var primaryKey in primaryKeys)
+            {
+                var columnName = $"{table.Name}.{primaryKey.Name}";
+                var valueName = $"@{columnName}_{stack}";
+                parameters.Add(valueName, primaryKey.Property.GetValue(model));
+                columnNames.Add($"({columnName} = {valueName})");
+            }
+
+            var script = string.Join(" AND ", columnNames);
+
+            return new RissoleScript(script, parameters);
         }
-
-        public RissoleScript GetPrimaryScript<T>(Dictionary<string, object> keys, int stack)
-        {
-            throw new NotImplementedException();
-        }
-
+        
         public static IRissoleProvider Instance {
             get {
                 if (_rissoleProvider == null)
