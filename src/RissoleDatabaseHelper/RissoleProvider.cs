@@ -74,11 +74,6 @@ namespace RissoleDatabaseHelper.Core
             return _rissoleConditionBuilder.RissoleScript(expression, rissoleTables);
         }
 
-        public RissoleCommandExecutor<T> GetRissoleExecutor<T>()
-        {
-            throw new NotImplementedException();
-        }
-
         public IRissoleExecutor<T> GetRissoleExecutor<T>(IDbConnection dbConnection)
         {
             return new RissoleExecutor<T>(dbConnection, GetRissoleTable<T>());

@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace RissoleDatabaseHelper.Core
+namespace RissoleDatabaseHelper.Migrator
 {
     internal class RissoleCommandBuilder
     {

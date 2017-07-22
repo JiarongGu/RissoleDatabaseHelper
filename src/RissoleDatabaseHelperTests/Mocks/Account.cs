@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace RissoleDatabaseHelperTests.Mocks
+namespace RissoleDatabaseHelperTests.Core.Mocks
 {
     [Table("accounts")]
     public class Account

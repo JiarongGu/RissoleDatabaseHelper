@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace RissoleDatabaseHelper.Core.Utils
+namespace RissoleDatabaseHelper.Migrator.Utils
 {
     public static class RissoleConstants
     {

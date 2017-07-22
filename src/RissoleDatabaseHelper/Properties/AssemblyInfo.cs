@@ -2,4 +2,5 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-[assembly: InternalsVisibleTo("RissoleDatabaseHelper.CoreTests")]
+[assembly: InternalsVisibleTo("RissoleDatabaseHelperTests.Core")]
+[assembly: InternalsVisibleTo("RissoleDatabaseHelper.Migrator")]

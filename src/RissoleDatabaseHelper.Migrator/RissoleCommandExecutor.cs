@@ -1,5 +1,5 @@
-﻿using RissoleDatabaseHelper.Core.Enums;
-using RissoleDatabaseHelper.Core.Internals;
+﻿using RissoleDatabaseHelper.Core;
+using RissoleDatabaseHelper.Core.Enums;
 using RissoleDatabaseHelper.Core.Models;
 using System;
 using System.Collections.Generic;
@@ -9,7 +9,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 
-namespace RissoleDatabaseHelper.Core
+namespace RissoleDatabaseHelper.Migrator
 {
     /// <summary>
     /// Mapping class for MySql Connection
@@ -19,9 +19,9 @@ namespace RissoleDatabaseHelper.Core
     {
         private readonly IDbConnection _connection;
         private readonly RissoleTable _table;
-
-        private readonly RissoleCommandBuilder _commandBuilder;
+        
         private readonly RissoleDefinitionBuilder _definitionBuilder;
+        private readonly RissoleCommandBuilder _commandBuilder;
 
         private Dictionary<string, string> _scriptDictionary;
 

@@ -16,9 +16,7 @@ namespace RissoleDatabaseHelper.Core
         RissoleScript GetJoinScript<T, TJoin>(Expression<Func<T, TJoin, bool>> expression);
 
         RissoleScript GetSelectCondition<T>(Expression<Func<T, object>> expression);
-
-        RissoleCommandExecutor<T> GetRissoleExecutor<T>();
-
+        
         IRissoleExecutor<T> GetRissoleExecutor<T>(IDbConnection dbConnection);
     }
 }

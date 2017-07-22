@@ -6,9 +6,9 @@ using System.Reflection;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Data;
-using RissoleDatabaseHelper.Core.Utils;
+using RissoleDatabaseHelper.Migrator.Utils;
 
-namespace RissoleDatabaseHelper.Core
+namespace RissoleDatabaseHelper.Migrator
 {
     public class RissoleDatabaseMigrator
     {

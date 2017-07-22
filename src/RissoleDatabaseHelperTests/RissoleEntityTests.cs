@@ -1,12 +1,12 @@
 using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using RissoleDatabaseHelper.Core;
-using RissoleDatabaseHelperTests.Mocks;
+using RissoleDatabaseHelperTests.Core.Mocks;
 using System.Data;
 using MySql.Data.MySqlClient;
 using System.Collections.Generic;
 
-namespace RissoleDatabaseHelperTests
+namespace RissoleDatabaseHelperTests.Core
 {
     [TestClass]
     public class RissoleEntityTests
