@@ -71,6 +71,22 @@ namespace RissoleDatabaseHelper.Core
             return new RissoleScript(script);
         }
         
+        public RissoleScript GetInsertScript<T>()
+        {
+            var table = GetRissoleTable<T>();
+            var script = $"INSERT INTO {table.Name}";
+
+            return new RissoleScript(script);
+        }
+
+        public RissoleScript GetUpdateScript<T>()
+        {
+            var table = GetRissoleTable<T>();
+            var script = $"UPDATE {table.Name}";
+
+            return new RissoleScript(script);
+        }
+
         public RissoleScript GetWhereScript<T>(Expression<Func<T, bool>> expression, int stack)
         {
             var table = GetRissoleTable<T>();
@@ -98,22 +114,48 @@ namespace RissoleDatabaseHelper.Core
         public RissoleScript GetPrimaryScript<T>(T model, int stack)
         {
             var table = GetRissoleTable<T>();
-            var primaryKeys = table.Columns.Where(x => x.Keys.Exists(y => y.Type == KeyType.PrimaryKey)).ToList();
+            var columns = table.Columns.Where(x => x.Keys.Exists(y => y.Type == KeyType.PrimaryKey)).ToList();
 
+            var parameters = GetColumnParameters(table, columns, model, stack);
+
+            var script = string.Join(" AND ", parameters.Item1);
+
+            return new RissoleScript(script, parameters.Item2);
+        }
+
+        public RissoleScript GetSetValueScript<T>(T model, int stack, bool ignorePrimaryKey)
+        {
+            var table = GetRissoleTable<T>();
+            var columns = table.Columns.Where(x => !(ignorePrimaryKey && x.Keys.Exists(y => y.Type == KeyType.PrimaryKey))).ToList();
+            var parameters = GetColumnParameters(table, columns, model, stack);
+
+            var script = string.Join(" , ", parameters.Item1);
+            return new RissoleScript(script, parameters.Item2);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="table"></param>
+        /// <param name="columns"></param>
+        /// <param name="model"></param>
+        /// <param name="stack"></param>
+        /// <returns>ColumnNames, Parameters</returns>
+        private Tuple<List<string>, Dictionary<string, object>> GetColumnParameters<T>(RissoleTable table, List<RissoleColumn> columns, T model, int stack)
+        {
             var parameters = new Dictionary<string, object>();
             var columnNames = new List<string>();
 
-            foreach (var primaryKey in primaryKeys)
+            foreach (var column in columns)
             {
-                var columnName = $"{table.Name}.{primaryKey.Name}";
+                var columnName = $"{table.Name}.{column.Name}";
                 var valueName = $"@{columnName}_{stack}";
-                parameters.Add(valueName, primaryKey.Property.GetValue(model));
+                parameters.Add(valueName, column.Property.GetValue(model));
                 columnNames.Add($"({columnName} = {valueName})");
             }
 
-            var script = string.Join(" AND ", columnNames);
-
-            return new RissoleScript(script, parameters);
+            return new Tuple<List<string>, Dictionary<string, object>>(columnNames, parameters);
         }
         
         public static IRissoleProvider Instance {

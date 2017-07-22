@@ -28,6 +28,8 @@ namespace RissoleDatabaseHelper.Core
 
         IRissoleCommand<T> Find(T model);
 
+        IRissoleCommand<T> Values(T model, bool ignorePrimaryKey);
+
         IRissoleCommand<T> Custom(string script, List<IDbDataParameter> parameters);
 
         IRissoleCommand<T> Custom(string script, params IDbDataParameter[] parameters);

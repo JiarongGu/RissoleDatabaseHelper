@@ -106,34 +106,25 @@ namespace RissoleDatabaseHelper.Core
         public IRissoleCommand<T> Join<TJoin>(Expression<Func<T, TJoin, bool>> prdicate)
         {
             var rissoleScript = _rissoleProvider.GetJoinScript(prdicate, Stack);
-
-            var rissoleCommand = new RissoleCommand<T>(this);
-            rissoleCommand.Script += " " + rissoleScript.Script;
-            rissoleCommand.Parameters.AddRange(GetParameterFromRissoleScript(rissoleScript));
-
-            return rissoleCommand;
+            return ConcatScript(rissoleScript);
         }
 
         public IRissoleCommand<T> Where(Expression<Func<T, bool>> prdicate)
         {
             var rissoleScript = _rissoleProvider.GetWhereScript(prdicate, Stack);
-
-            var rissoleCommand = new RissoleCommand<T>(this);
-            rissoleCommand.Script += " " + rissoleScript.Script;
-            rissoleCommand.Parameters.AddRange(GetParameterFromRissoleScript(rissoleScript));
-
-            return rissoleCommand;
+            return ConcatScript(rissoleScript);
         }
 
         public IRissoleCommand<T> Find(T model)
         {
             var rissoleScript = _rissoleProvider.GetPrimaryScript(model, Stack);
+            return ConcatScript(rissoleScript);
+        }
 
-            var rissoleCommand = new RissoleCommand<T>(this);
-            rissoleCommand.Script += " " + rissoleScript.Script;
-            rissoleCommand.Parameters.AddRange(GetParameterFromRissoleScript(rissoleScript));
-
-            return rissoleCommand;
+        public IRissoleCommand<T> Values(T model, bool ignorePrimaryKey)
+        {
+            var rissoleScript = _rissoleProvider.GetSetValueScript(model, Stack, ignorePrimaryKey);
+            return ConcatScript(rissoleScript);
         }
 
         public IRissoleCommand<T> Custom(string script, List<IDbDataParameter> parameters)
@@ -144,31 +135,7 @@ namespace RissoleDatabaseHelper.Core
             
             return rissoleCommand;
         }
-
-        private ICollection<IDbDataParameter> GetParameterFromRissoleScript(RissoleScript rissoleScript)
-        {
-            var tempCommand = Connection.CreateCommand();
-            List<IDbDataParameter> parameters = new List<IDbDataParameter>();
-            foreach (var scriptParam in rissoleScript.Parameters)
-            {
-                var parameter = tempCommand.CreateParameter();
-                parameter.ParameterName = scriptParam.Key;
-
-                if (scriptParam.Value == null)
-                {
-                    parameter.Value = DBNull.Value;
-                }
-                else
-                {
-                    parameter.Value = scriptParam.Value;
-                    parameter.DbType = RissoleQueryDictionary.TypeMap[scriptParam.Value.GetType()];
-                }
-
-                parameters.Add(parameter);
-            }
-            return parameters;
-        }
-
+        
         public IRissoleCommand<T> Custom(string script, params IDbDataParameter[] parameters)
         {
             return Custom(script, new List<IDbDataParameter>(parameters));
@@ -233,6 +200,39 @@ namespace RissoleDatabaseHelper.Core
         public void Dispose()
         {
             _dbConnection.Close();
+        }
+
+        private IRissoleCommand<T> ConcatScript(RissoleScript rissoleScript)
+        {
+            var rissoleCommand = new RissoleCommand<T>(this);
+            rissoleCommand.Script += " " + rissoleScript.Script;
+            rissoleCommand.Parameters.AddRange(GetParameterFromRissoleScript(rissoleScript));
+
+            return rissoleCommand;
+        }
+
+        private ICollection<IDbDataParameter> GetParameterFromRissoleScript(RissoleScript rissoleScript)
+        {
+            var tempCommand = Connection.CreateCommand();
+            List<IDbDataParameter> parameters = new List<IDbDataParameter>();
+            foreach (var scriptParam in rissoleScript.Parameters)
+            {
+                var parameter = tempCommand.CreateParameter();
+                parameter.ParameterName = scriptParam.Key;
+
+                if (scriptParam.Value == null)
+                {
+                    parameter.Value = DBNull.Value;
+                }
+                else
+                {
+                    parameter.Value = scriptParam.Value;
+                    parameter.DbType = RissoleQueryDictionary.TypeMap[scriptParam.Value.GetType()];
+                }
+
+                parameters.Add(parameter);
+            }
+            return parameters;
         }
     }
 }

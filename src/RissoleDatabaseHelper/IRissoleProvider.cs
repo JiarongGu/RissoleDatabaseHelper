@@ -18,11 +18,17 @@ namespace RissoleDatabaseHelper.Core
         
         RissoleScript GetPrimaryScript<T>(T model, int stack);
 
+        RissoleScript GetSetValueScript<T>(T model, int stack, bool ignorePrimaryKey);
+
         // without parameters
         RissoleScript GetSelectScript<T>(Expression<Func<T, object>> expression);
 
         RissoleScript GetFirstScript<T>(Expression<Func<T, object>> expression);
 
         RissoleScript GetDeleteScript<T>();
+
+        RissoleScript GetInsertScript<T>();
+
+        RissoleScript GetUpdateScript<T>();
     }
 }
