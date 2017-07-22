@@ -38,6 +38,22 @@ namespace RissoleDatabaseHelperTests.Core
         }
 
         [TestMethod]
+        public void TestCommandBuildIsNull()
+        {
+            var command = _accounts.Select(x => x).Where(x => x.Email == null);
+            Assert.AreEqual(command.Parameters.Count, 1);
+            Assert.IsTrue(command.Script.Contains("IS @NULL"));
+        }
+
+        [TestMethod]
+        public void TestCommandBuildIsNotNull()
+        {
+            var command = _accounts.Select(x => x).Where(x => x.Email != null);
+            Assert.AreEqual(command.Parameters.Count, 1);
+            Assert.IsTrue(command.Script.Contains("IS NOT @NULL"));
+        }
+
+        [TestMethod]
         public void TestSelectionScriptBuild()
         {
             var id = Guid.NewGuid();

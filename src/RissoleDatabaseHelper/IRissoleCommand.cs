@@ -20,6 +20,8 @@ namespace RissoleDatabaseHelper.Core
 
         IDbConnection Connection { get; set; }
         
+        int Stack { get; }
+
         IRissoleCommand<T> Where(Expression<Func<T, bool>> prdicate);
        
         IRissoleCommand<T> Join<TJoin> (Expression<Func<T, TJoin, bool>> prdicate);

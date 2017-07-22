@@ -22,6 +22,8 @@ namespace RissoleDatabaseHelper.Core
 
         IRissoleCommand<T> Insert(List<T> model);
 
+        IRissoleCommand<T> Delete(Expression<Func<T, bool>> prdicate);
+
         IRissoleCommand<T> Delete(T model);
 
         IRissoleCommand<T> Delete(object primary);

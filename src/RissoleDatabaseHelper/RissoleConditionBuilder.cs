@@ -15,16 +15,17 @@ namespace RissoleDatabaseHelper.Core
     /// </summary>
     internal class RissoleConditionBuilder
     {
-        public RissoleScript RissoleScript(LambdaExpression expression, ICollection<RissoleTable> rissoleTables)
+        public RissoleScript RissoleScript(LambdaExpression expression, ICollection<RissoleTable> rissoleTables, int commandStack)
         {
             var parameters = ResolveParameters(expression, rissoleTables);
 
-            var rssioleScript = ResolveScript(expression.Body, parameters, 0);
+            var rssioleScript = ResolveScript(expression.Body, parameters, commandStack, 0);
 
             return rssioleScript;
         }
 
-        private Dictionary<ParameterExpression, RissoleTable> ResolveParameters(LambdaExpression expression, ICollection<RissoleTable> rissoleTables)
+        private Dictionary<ParameterExpression, RissoleTable> ResolveParameters(LambdaExpression expression, 
+            ICollection<RissoleTable> rissoleTables)
         {
             Dictionary<ParameterExpression, RissoleTable> parameters = new Dictionary<ParameterExpression, RissoleTable>();
 
@@ -37,27 +38,34 @@ namespace RissoleDatabaseHelper.Core
             return parameters;
         }
 
-        public RissoleScript ResolveScript(Expression expression, Dictionary<ParameterExpression, RissoleTable> parameters, int stack)
+        public RissoleScript ResolveScript(Expression expression, Dictionary<ParameterExpression, RissoleTable> parameters, int commandStack, int stack)
         {
-            if (expression is UnaryExpression) return ResolveUnaryExpression((UnaryExpression)expression, parameters, ++stack);
+            if (expression is UnaryExpression)
+                return ResolveUnaryExpression((UnaryExpression)expression, parameters, commandStack, ++stack);
 
-            if (expression is BinaryExpression) return ResolveBinaryExpression((BinaryExpression)expression, parameters, ++stack);
+            if (expression is BinaryExpression)
+                return ResolveBinaryExpression((BinaryExpression)expression, parameters, commandStack, ++stack);
 
-            if (expression is ConstantExpression) return ResolveConstantExpression((ConstantExpression)expression, ++stack);
+            if (expression is ConstantExpression)
+                return ResolveConstantExpression((ConstantExpression)expression, commandStack, ++stack);
 
-            if (expression is MemberExpression) return ResolveMemberExpression((MemberExpression)expression, parameters, ++stack);
+            if (expression is MemberExpression)
+                return ResolveMemberExpression((MemberExpression)expression, parameters, commandStack, ++stack);
 
-            if (expression is MethodCallExpression) return ResolveMethodCallExpression((MethodCallExpression)expression, parameters, ++stack);
+            if (expression is MethodCallExpression)
+                return ResolveMethodCallExpression((MethodCallExpression)expression, parameters, commandStack, ++stack);
 
-            if (expression is ParameterExpression) return ResolveParameterException((ParameterExpression)expression, parameters, ++stack);
+            if (expression is ParameterExpression)
+                return ResolveParameterException((ParameterExpression)expression, parameters, commandStack, ++stack);
 
-            if (expression is NewExpression) return ResolveNewException((NewExpression)expression, parameters, ++stack);
+            if (expression is NewExpression)
+                return ResolveNewException((NewExpression)expression, parameters, commandStack, ++stack);
 
             throw new Exception("Unsupported expression: " + expression.GetType().Name);
         }
 
         private RissoleScript ResolveParameterException(ParameterExpression expression, 
-            Dictionary<ParameterExpression, RissoleTable> parameters, int stack)
+            Dictionary<ParameterExpression, RissoleTable> parameters, int commandStack, int stack)
         {
             var table = parameters[expression];
             var script = string.Join(", ", table.Columns.Select(x => $"{table.Name}.{x.Name}").ToList());
@@ -68,10 +76,11 @@ namespace RissoleDatabaseHelper.Core
         }
 
         private RissoleScript ResolveUnaryExpression(UnaryExpression expression, 
-            Dictionary<ParameterExpression, RissoleTable> parameters, int stack)
+            Dictionary<ParameterExpression, RissoleTable> parameters, int commandStack, int stack)
         {
-            var right = ResolveScript(expression.Operand, parameters, ++stack);
-            var node = NodeTypeToString(expression.NodeType, right.Parameters.FirstOrDefault().Value == null);
+            var right = ResolveScript(expression.Operand, parameters, commandStack, ++stack);
+            var isNull = right.Parameters.FirstOrDefault().Value == null;
+            var node = RissoleQueryDictionary.NodeTypeToString(expression.NodeType, isNull);
 
             var script = $"({node} {right.Script})";
             var rissoleScript = new RissoleScript(script, right.Parameters);
@@ -80,12 +89,12 @@ namespace RissoleDatabaseHelper.Core
         }
 
         private RissoleScript ResolveBinaryExpression(BinaryExpression expression,
-            Dictionary<ParameterExpression, RissoleTable> parameters, int stack)
+            Dictionary<ParameterExpression, RissoleTable> parameters, int commandStack, int stack)
         {
-            var left = ResolveScript(expression.Left, parameters, ++stack);
-            var right = ResolveScript(expression.Right, parameters, ++stack);
+            var left = ResolveScript(expression.Left, parameters, commandStack, ++stack);
+            var right = ResolveScript(expression.Right, parameters, commandStack, ++stack);
             var isNull = right.Parameters.Count > 0 && right.Parameters.First().Value == null;
-            var node = NodeTypeToString(expression.NodeType, isNull);
+            var node = RissoleQueryDictionary.NodeTypeToString(expression.NodeType, isNull);
 
             var script = $"({left.Script} {node} {right.Script})";
             var rissoleScript = new RissoleScript(script, left.Parameters, right.Parameters);
@@ -93,13 +102,13 @@ namespace RissoleDatabaseHelper.Core
             return rissoleScript;
         }
 
-        private RissoleScript ResolveConstantExpression(ConstantExpression expression, int stack)
+        private RissoleScript ResolveConstantExpression(ConstantExpression expression, int commandStack, int stack)
         {
-            return ValueToRissoleScript(expression.Value, stack);
+            return ValueToRissoleScript(expression.Value, commandStack, stack);
         }
 
         private RissoleScript ResolveMemberExpression(MemberExpression expression, 
-            Dictionary<ParameterExpression, RissoleTable> parameters, int stack)
+            Dictionary<ParameterExpression, RissoleTable> parameters, int commandStack, int stack)
         {
             if (expression.Member is PropertyInfo)
             {
@@ -114,24 +123,24 @@ namespace RissoleDatabaseHelper.Core
 
                     return rissoleScript;
                 }
-                return ValueToRissoleScript(GetValue(expression), stack);
+                return ValueToRissoleScript(GetValue(expression), commandStack, stack);
             }
 
             if (expression.Member is FieldInfo)
             {
-                return ValueToRissoleScript(GetValue(expression), stack);
+                return ValueToRissoleScript(GetValue(expression), commandStack, stack);
             }
 
             throw new Exception($"Expression does not refer to a property or field: {expression}");
         }
 
         private RissoleScript ResolveNewException(NewExpression expression,
-            Dictionary<ParameterExpression, RissoleTable> parameters, int stack)
+            Dictionary<ParameterExpression, RissoleTable> parameters, int commandStack, int stack)
         {
             var values = new List<RissoleScript>();
             foreach (var argument in expression.Arguments)
             {
-                values.Add(ResolveScript(argument, parameters, ++stack));
+                values.Add(ResolveScript(argument, parameters, commandStack, ++stack));
             }
 
             var script = string.Join(", ", values.Select(x => x.Script).ToList());
@@ -140,17 +149,17 @@ namespace RissoleDatabaseHelper.Core
         }
 
         private RissoleScript ResolveMethodCallExpression(MethodCallExpression expression, 
-            Dictionary<ParameterExpression, RissoleTable> parameters, int stack)
+            Dictionary<ParameterExpression, RissoleTable> parameters, int commandStack, int stack)
         {
             switch (expression.Method.Name)
             {
-                case "Contains": return ResolveContainsMethod(expression, parameters, ++stack);
+                case "Contains": return ResolveContainsMethod(expression, parameters, commandStack, ++stack);
             }
 
             if (expression.Method == typeof(string).GetMethod("StartsWith", new[] { typeof(string) }))
             {
-                var left = ResolveScript(expression.Object, parameters, ++stack);
-                var right = ResolveScript(expression.Arguments[0], parameters, ++stack);
+                var left = ResolveScript(expression.Object, parameters, commandStack, ++stack);
+                var right = ResolveScript(expression.Arguments[0], parameters, commandStack, ++stack);
                 var script = $"({left.Script} LIKE '{right.Script}%')";
 
                 return new RissoleScript(script, left.Parameters, right.Parameters);
@@ -158,8 +167,8 @@ namespace RissoleDatabaseHelper.Core
 
             if (expression.Method == typeof(string).GetMethod("EndsWith", new[] { typeof(string) }))
             {
-                var left = ResolveScript(expression.Object, parameters, ++stack);
-                var right = ResolveScript(expression.Arguments[0], parameters, ++stack);
+                var left = ResolveScript(expression.Object, parameters, commandStack, ++stack);
+                var right = ResolveScript(expression.Arguments[0], parameters, commandStack, ++stack);
                 var script = $"({left.Script} LIKE '%{right.Script}')";
 
                 return new RissoleScript(script, left.Parameters, right.Parameters);
@@ -167,23 +176,23 @@ namespace RissoleDatabaseHelper.Core
 
             if (expression.Object is MemberExpression)
             {
-                return ResolveScript(expression.Object, parameters, ++stack);
+                return ResolveScript(expression.Object, parameters, commandStack, ++stack);
             }
 
             object value = Expression.Lambda(expression).Compile().DynamicInvoke();
-            return ValueToRissoleScript(value, stack);
+            return ValueToRissoleScript(value, commandStack, stack);
 
             throw new Exception("Unsupported method call: " + expression.Method.Name);
         }
 
         private RissoleScript ResolveContainsMethod(MethodCallExpression expression,
-    Dictionary<ParameterExpression, RissoleTable> parameters, int stack)
+    Dictionary<ParameterExpression, RissoleTable> parameters, int commandStack, int stack)
         {
             // LIKE queries:
             if (expression.Method == typeof(string).GetMethod("Contains", new[] { typeof(string) }))
             {
-                var left = ResolveScript(expression.Object, parameters, ++stack);
-                var right = ResolveScript(expression.Arguments[0], parameters, ++stack);
+                var left = ResolveScript(expression.Object, parameters, commandStack, ++stack);
+                var right = ResolveScript(expression.Arguments[0], parameters, commandStack, ++stack);
                 var script = $"({left.Script} LIKE '%{right.Script}%')";
 
                 return new RissoleScript(script, left.Parameters, right.Parameters);
@@ -208,18 +217,18 @@ namespace RissoleDatabaseHelper.Core
                 }
 
                 var values = (IEnumerable)GetValue(collection);
-                var left = ResolveScript(property, parameters, ++stack);
+                var left = ResolveScript(property, parameters, commandStack, ++stack);
 
                 List<RissoleScript> subScripts = new List<RissoleScript>();
 
                 foreach (var value in values)
                 {
-                    subScripts.Add(ValueToRissoleScript(value, ++stack));
+                    subScripts.Add(ValueToRissoleScript(value, commandStack, ++stack));
                 }
 
                 if (subScripts.Count == 0)
                 {
-                    return ValueToRissoleScript(false, ++stack);
+                    return ValueToRissoleScript(false, commandStack, ++stack);
                 }
 
                 var script = $"({left} IN ({string.Join(", ", subScripts.Select(x => x.Script).ToList())})";
@@ -228,9 +237,10 @@ namespace RissoleDatabaseHelper.Core
             }
         }
 
-        public RissoleScript ValueToRissoleScript(object value, int stack)
+        public RissoleScript ValueToRissoleScript(object value, int commandStack, int stack)
         {
-            var parameterName = $"{value.GetType().Name}_{stack}";
+            var valueName = value == null ? "NULL" : value.GetType().Name;
+            var parameterName = $"{valueName}_{commandStack}_{stack}";
 
             var rissoleScript = new RissoleScript();
             rissoleScript.Parameters.Add(parameterName, value);
@@ -239,77 +249,11 @@ namespace RissoleDatabaseHelper.Core
             return rissoleScript;
         }
 
-        public string ValueToString(object value)
-        {
-            var quote = ValueTypeHasQuote(value.GetType());
-            string convert = string.Empty;
-
-            if (value is bool)
-            {
-                convert = (bool)value ? "1" : "0";
-            }
-            else
-            {
-                convert = value == null ? "NULL" : value.ToString();
-            }
-
-            return quote ? $"'{convert}'" : convert;
-        }
-
         public object GetValue(Expression member)
         {
             var objectMember = Expression.Convert(member, typeof(object));
             var lambda = Expression.Lambda<Func<object>>(objectMember);
             return lambda.Compile().DynamicInvoke();
-        }
-
-        public object NodeTypeToString(ExpressionType nodeType, bool isNull)
-        {
-            switch (nodeType)
-            {
-                case ExpressionType.Add:                return "+";
-                case ExpressionType.And:                return "&";
-                case ExpressionType.AndAlso:            return "AND";
-                case ExpressionType.Convert:            return isNull ? "NULL": "";
-                case ExpressionType.Divide:             return "/";
-                case ExpressionType.Equal:              return isNull ? "IS" : "=";
-                case ExpressionType.ExclusiveOr:        return "^";
-                case ExpressionType.GreaterThan:        return ">";
-                case ExpressionType.GreaterThanOrEqual: return ">=";
-                case ExpressionType.LessThan:           return "<";
-                case ExpressionType.LessThanOrEqual:    return "<=";
-                case ExpressionType.Modulo:             return "%";
-                case ExpressionType.Multiply:           return "*";
-                case ExpressionType.Negate:             return "-";
-                case ExpressionType.Not:                return "NOT";
-                case ExpressionType.NotEqual:           return isNull ? "IS NOT" : "<>";
-                case ExpressionType.Or:                 return "|";
-                case ExpressionType.OrElse:             return "OR";
-                case ExpressionType.Subtract:           return "-";
-                default: throw new Exception($"Unsupported node type: {nodeType}");
-            }
-        }
-
-        public bool ValueTypeHasQuote(Type type)
-        {
-            switch (Type.GetTypeCode(type))
-            {
-                case TypeCode.Byte:
-                case TypeCode.SByte:
-                case TypeCode.UInt16:
-                case TypeCode.UInt32:
-                case TypeCode.UInt64:
-                case TypeCode.Int16:
-                case TypeCode.Int32:
-                case TypeCode.Int64:
-                case TypeCode.Decimal:
-                case TypeCode.Double:
-                case TypeCode.Single:
-                case TypeCode.Boolean:
-                    return false;
-                default:
-                    return true;
-            }
         }
     }
 }

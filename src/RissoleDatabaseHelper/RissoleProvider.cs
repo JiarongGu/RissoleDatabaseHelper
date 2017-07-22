@@ -4,6 +4,8 @@ using System.Text;
 using RissoleDatabaseHelper.Core.Models;
 using System.Linq.Expressions;
 using System.Data;
+using System.Linq;
+using RissoleDatabaseHelper.Core.Enums;
 
 namespace RissoleDatabaseHelper.Core
 {
@@ -34,44 +36,77 @@ namespace RissoleDatabaseHelper.Core
             return rissoleTable;
         }
 
-        public RissoleScript GetWhereCondition<T>(Expression<Func<T, bool>> expression)
+        public RissoleScript GetSelectScript<T>(Expression<Func<T, object>> expression)
         {
-            var outTable = GetRissoleTable<T>();
-            var rissoleTables = new List<RissoleTable>() { outTable };
+            var table = GetRissoleTable<T>();
+            var rissoleTables = new List<RissoleTable>() { table };
 
             var rissoleScript = GetCondition(expression, rissoleTables);
-            rissoleScript.Script = $"WHERE {rissoleScript.Script}";
+            rissoleScript.Script = $"SELECT {rissoleScript.Script} FROM {table.Name}";
 
             return rissoleScript;
         }
         
-        public RissoleScript GetJoinScript<T, TJoin>(Expression<Func<T, TJoin, bool>> expression)
+        private RissoleScript GetCondition(LambdaExpression expression, List<RissoleTable> rissoleTables, int stack = 0)
+        {
+            return _rissoleConditionBuilder.RissoleScript(expression, rissoleTables, stack);
+        }
+
+        public RissoleScript GetFirstScript<T>(Expression<Func<T, object>> expression)
+        {
+            var table = GetRissoleTable<T>();
+            var rissoleTables = new List<RissoleTable>() { table };
+
+            var rissoleScript = GetCondition(expression, rissoleTables);
+            rissoleScript.Script = $"SELECT TOP(1) {rissoleScript.Script} FROM {table.Name}";
+
+            return rissoleScript;
+        }
+
+        public RissoleScript GetDeleteScript<T>()
+        {
+            var table = GetRissoleTable<T>();
+            var script = $"DELETE FROM {table.Name}";
+
+            return new RissoleScript(script);
+        }
+        
+        public RissoleScript GetWhereScript<T>(Expression<Func<T, bool>> expression, int stack)
+        {
+            var table = GetRissoleTable<T>();
+            var rissoleTables = new List<RissoleTable>() { table };
+
+            var rissoleScript = GetCondition(expression, rissoleTables, stack);
+            rissoleScript.Script = $"WHERE {rissoleScript.Script}";
+
+            return rissoleScript;
+        }
+
+        public RissoleScript GetJoinScript<T, TJoin>(Expression<Func<T, TJoin, bool>> expression, int stack)
         {
             var joinTable = GetRissoleTable<TJoin>();
             var outTable = GetRissoleTable<T>();
 
             var rissoleTables = new List<RissoleTable>() { joinTable, outTable };
 
-            var rissoleScript = GetCondition(expression, rissoleTables);
+            var rissoleScript = GetCondition(expression, rissoleTables, stack);
             rissoleScript.Script = $"JOIN {joinTable.Name} ON {rissoleScript.Script}";
 
             return rissoleScript;
         }
 
-        public RissoleScript GetSelectCondition<T>(Expression<Func<T, object>> expression)
+        public RissoleScript GetPrimaryScript<T>(T model, int stack)
         {
-            var outTable = GetRissoleTable<T>();
-            var rissoleTables = new List<RissoleTable>() { outTable };
+            var table = GetRissoleTable<T>();
+            var primary = table.Columns.Where(x => x.Keys.Exists(y => y.Type == KeyType.PrimaryKey)).ToList();
+            
 
-            var rissoleScript = GetCondition(expression, rissoleTables);
-            rissoleScript.Script = $"SELECT {rissoleScript.Script} FROM {outTable.Name}";
-
-            return rissoleScript;
+            throw new NotImplementedException();
         }
-        
-        private RissoleScript GetCondition(LambdaExpression expression, List<RissoleTable> rissoleTables)
+
+        public RissoleScript GetPrimaryScript<T>(Dictionary<string, object> keys, int stack)
         {
-            return _rissoleConditionBuilder.RissoleScript(expression, rissoleTables);
+            throw new NotImplementedException();
         }
 
         public static IRissoleProvider Instance {

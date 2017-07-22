@@ -20,13 +20,32 @@ namespace RissoleDatabaseHelper.Core
             _rissoleTable = _rissoleProvider.GetRissoleTable<T>();
         }
 
+        public IRissoleCommand<T> Delete(Expression<Func<T, bool>> prdicate)
+        {
+            var rissoleCommand = new RissoleCommand<T>(_dbConnection, _rissoleProvider);
+            var rissoleScript = _rissoleProvider.GetDeleteScript<T>();
+            rissoleCommand.Script = rissoleScript.Script;
+
+            return rissoleCommand.Where(prdicate);
+        }
+
         public IRissoleCommand<T> Delete(T model)
         {
+            var rissoleCommand = new RissoleCommand<T>(_dbConnection, _rissoleProvider);
+            var rissoleScript = _rissoleProvider.GetDeleteScript<T>();
+            rissoleCommand.Script = rissoleScript.Script;
+
+
+
             throw new NotImplementedException();
         }
 
         public IRissoleCommand<T> Delete(object primary)
         {
+            var rissoleCommand = new RissoleCommand<T>(_dbConnection, _rissoleProvider);
+            var rissoleScript = _rissoleProvider.GetDeleteScript<T>();
+            rissoleCommand.Script = rissoleScript.Script;
+
             throw new NotImplementedException();
         }
 
@@ -43,7 +62,7 @@ namespace RissoleDatabaseHelper.Core
         public IRissoleCommand<T> Select(Expression<Func<T, object>> prdicate)
         {
             var rissoleCommand = new RissoleCommand<T>(_dbConnection, _rissoleProvider);
-            var rissoleScript = _rissoleProvider.GetSelectCondition(prdicate);
+            var rissoleScript = _rissoleProvider.GetSelectScript(prdicate);
 
             rissoleCommand.Script = rissoleScript.Script;
 
@@ -53,7 +72,7 @@ namespace RissoleDatabaseHelper.Core
         public IRissoleCommand<T> First(Expression<Func<T, object>> prdicate)
         {
             var rissoleCommand = new RissoleCommand<T>(_dbConnection, _rissoleProvider);
-            var rissoleScript = _rissoleProvider.GetSelectCondition(prdicate);
+            var rissoleScript = _rissoleProvider.GetSelectScript(prdicate);
 
             rissoleCommand.Script = rissoleScript.Script;
 

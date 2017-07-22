@@ -8,4 +8,8 @@
     <ProjectReference Include="..\RissoleDatabaseHelper\RissoleDatabaseHelper.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Models\" />
+  </ItemGroup>
+
 </Project>

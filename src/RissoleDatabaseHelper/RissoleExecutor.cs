@@ -1,5 +1,4 @@
 ﻿using RissoleDatabaseHelper.Core.Models;
-using RissoleDatabaseHelper.Core.Utils;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -10,7 +9,7 @@ using System.Text.RegularExpressions;
 
 namespace RissoleDatabaseHelper.Core
 {
-    public class RissoleExecutor<T> : IRissoleExecutor<T>, IDisposable
+    public class RissoleExecutor<T> : IRissoleExecutor<T>
     {
         private readonly IRissoleCommand<T> _rissoleCommand;
         private readonly RissoleTable _table;
@@ -216,7 +215,7 @@ namespace RissoleDatabaseHelper.Core
                     var parameter = command.CreateParameter();
                     parameter.ParameterName = propertyParameter;
                     parameter.Value = property.GetValue(model) == null ? DBNull.Value : property.GetValue(model);
-                    parameter.DbType = RissoleData.TypeMap[property.GetType()];
+                    parameter.DbType = RissoleQueryDictionary.TypeMap[property.GetType()];
 
                     command.Parameters.Add(parameter);
                 }

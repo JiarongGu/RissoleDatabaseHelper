@@ -1,5 +1,4 @@
 ﻿using RissoleDatabaseHelper.Core.Models;
-using RissoleDatabaseHelper.Core.Utils;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -20,11 +19,32 @@ namespace RissoleDatabaseHelper.Core
         private List<IDbDataParameter> _parameters;
 
         private string _script;
+        private int _stack;
 
         public string Script
         {
             get { return _script; }
             set { _script = value; }
+        }
+       
+        internal RissoleCommand(IDbConnection dbConnection, IRissoleProvider rissoleProvider)
+        {
+            _dbConnection = dbConnection;
+            _rissoleProvider = rissoleProvider;
+            _parameters = new List<IDbDataParameter>();
+            _stack = 0;
+        }
+
+        internal RissoleCommand(RissoleCommand<T> rissoleCommand)
+        {
+            _parentCommand = rissoleCommand;
+            _rissoleProvider = rissoleCommand._rissoleProvider;
+            _script += rissoleCommand._script;
+            _stack = rissoleCommand.Stack + 1;
+        }
+        
+        public int Stack {
+            get { return _stack; }
         }
 
         public List<IDbDataParameter> Parameters
@@ -49,7 +69,8 @@ namespace RissoleDatabaseHelper.Core
             }
         }
 
-        public IDbConnection Connection {
+        public IDbConnection Connection
+        {
             get
             {
                 if (_parentCommand == null)
@@ -69,24 +90,10 @@ namespace RissoleDatabaseHelper.Core
                 }
             }
         }
-       
-        internal RissoleCommand(IDbConnection dbConnection, IRissoleProvider rissoleProvider)
-        {
-            _dbConnection = dbConnection;
-            _rissoleProvider = rissoleProvider;
-            _parameters = new List<IDbDataParameter>();
-        }
 
-        internal RissoleCommand(RissoleCommand<T> rissoleCommand)
-        {
-            _parentCommand = rissoleCommand;
-            _rissoleProvider = rissoleCommand._rissoleProvider;
-            _script += rissoleCommand._script;
-        }
-        
         public IRissoleCommand<T> Join<TJoin>(Expression<Func<T, TJoin, bool>> prdicate)
         {
-            var rissoleScript = _rissoleProvider.GetJoinScript(prdicate);
+            var rissoleScript = _rissoleProvider.GetJoinScript(prdicate, Stack);
 
             var rissoleCommand = new RissoleCommand<T>(this);
             rissoleCommand.Script += " " + rissoleScript.Script;
@@ -97,7 +104,7 @@ namespace RissoleDatabaseHelper.Core
 
         public IRissoleCommand<T> Where(Expression<Func<T, bool>> prdicate)
         {
-            var rissoleScript = _rissoleProvider.GetWhereCondition(prdicate);
+            var rissoleScript = _rissoleProvider.GetWhereScript(prdicate, Stack);
 
             var rissoleCommand = new RissoleCommand<T>(this);
             rissoleCommand.Script += " " + rissoleScript.Script;
@@ -123,8 +130,17 @@ namespace RissoleDatabaseHelper.Core
             {
                 var parameter = tempCommand.CreateParameter();
                 parameter.ParameterName = scriptParam.Key;
-                parameter.Value = scriptParam.Value;
-                parameter.DbType = RissoleData.TypeMap[scriptParam.Value.GetType()];
+
+                if (scriptParam.Value == null)
+                {
+                    parameter.Value = DBNull.Value;
+                }
+                else
+                {
+                    parameter.Value = scriptParam.Value;
+                    parameter.DbType = RissoleQueryDictionary.TypeMap[scriptParam.Value.GetType()];
+                }
+
                 parameters.Add(parameter);
             }
             return parameters;
