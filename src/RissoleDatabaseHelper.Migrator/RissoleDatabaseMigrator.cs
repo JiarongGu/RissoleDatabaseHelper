@@ -43,6 +43,7 @@ namespace RissoleDatabaseHelper.Migrator
         {
             //check if the query already executed
             string fetchScript = $"SELECT COUNT(*) FROM _migrationhistory WHERE MigrationContextName = '{resourceName}'";
+
             bool foundExecuted = int.Parse(ExecuteScalar(fetchScript, _connection)) > 0;
 
             if (foundExecuted) return;
