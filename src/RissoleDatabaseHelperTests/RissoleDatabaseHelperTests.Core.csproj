@@ -12,7 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\RissoleDatabaseHelper\RissoleDatabaseHelper.Core.csproj" />
+    <ProjectReference Include="..\RissoleDatabaseHelper.Core\RissoleDatabaseHelper.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>
