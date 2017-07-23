@@ -30,20 +30,20 @@ namespace RissoleDatabaseHelper.Core
             return rissoleCommand.Where(prdicate);
         }
 
-        public IRissoleCommand<T> Delete(T model)
+        public int Delete(T model)
         {
             var rissoleCommand = new RissoleCommand<T>(_dbConnection, _rissoleProvider);
             rissoleCommand.Script = _rissoleProvider.GetDeleteScript<T>();
 
-            return rissoleCommand.Where(model);
+            return rissoleCommand.Where(model).ExecuteNonQuery();
         }
         
-        public IRissoleCommand<T> Update(T model, bool includePirmaryKey = false)
+        public int Update(T model, bool includePirmaryKey = false)
         {
-            return BuildUpdateRissoleCommand(model, includePirmaryKey, 0);
+            return BuildUpdateRissoleCommand(model, includePirmaryKey, 0).ExecuteNonQuery();
         }
 
-        public IRissoleCommand<T> Update(IList<T> models, bool includePirmaryKey = false)
+        public int Update(IList<T> models, bool includePirmaryKey = false)
         {
             var rissoleCommands = new List<IRissoleCommand<T>>();
 
@@ -56,22 +56,17 @@ namespace RissoleDatabaseHelper.Core
                 rissoleCommands.Add(rissoleCommand);
             }
             
-            return ConcatRissoleCommands(rissoleCommands);
+            return ConcatRissoleCommands(rissoleCommands).ExecuteNonQuery();
         }
         
-        public IRissoleCommand<T> Insert(T model)
+        T Insert(T model)
         {
             var rissoleCommand = new RissoleCommand<T>(_dbConnection, _rissoleProvider);
             rissoleCommand.Script = _rissoleProvider.GetInsertScript<T>();
             rissoleCommand = rissoleCommand.InsertValues(model);
             rissoleCommand.Script += _rissoleProvider.GetConnectionScript(_dbConnection, QueryCommandType.GetLastInsert);
 
-            return rissoleCommand.InsertValues(model);
-        }
-
-        public IRissoleCommand<T> Insert(List<T> model)
-        {
-            throw new NotImplementedException();
+            return rissoleCommand.InsertValues(model).First();
         }
 
         public IRissoleCommand<T> Select(Expression<Func<T, object>> prdicate)

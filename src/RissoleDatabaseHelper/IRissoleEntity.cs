@@ -17,21 +17,19 @@ namespace RissoleDatabaseHelper.Core
         IRissoleCommand<T> Custom(string script, List<IDbDataParameter> parameters);
 
         IRissoleCommand<T> Custom(string script, params IDbDataParameter[] parameters);
-
-        IRissoleCommand<T> Insert(T model);
-
-        IRissoleCommand<T> Insert(List<T> model);
-
-        IRissoleCommand<T> Delete(Expression<Func<T, bool>> prdicate);
-
-        IRissoleCommand<T> Delete(T model);
-
-        IRissoleCommand<T> Update(T model, bool includePirmaryKey = false);
-
-        IRissoleCommand<T> Update(IList<T> models, bool includePirmaryKey = false);
         
         IRissoleCommand<T> Select(Expression<Func<T, object>> prdicate);
 
         IRissoleCommand<T> First(Expression<Func<T, object>> prdicate);
+
+        T Insert(T model);
+
+        int Delete(Expression<Func<T, bool>> prdicate);
+
+        int Delete(T model);
+
+        int Update(T model, bool includePirmaryKey = false);
+
+        int Update(IList<T> models, bool includePirmaryKey = false);
     }
 }

@@ -144,7 +144,9 @@ namespace RissoleDatabaseHelper.Core
         public RissoleScript GetSetValueScript<T>(T model, int stack, bool includePirmaryKey)
         {
             var table = GetRissoleTable<T>();
-            var columns = table.Columns.Where(x => includePirmaryKey || !x.Keys.Exists(y => y.Type == KeyType.PrimaryKey)).ToList();
+            var columns = table.Columns.Where(x => 
+                (includePirmaryKey || !x.Keys.Exists(y => y.Type == KeyType.PrimaryKey) 
+                && !(x.IsComputed || x.IsGenerated))).ToList();
             var parameters = GetRissoleParameters(table, columns, model, stack);
 
             var script = string.Join(", ", parameters.Select(x => $"{x.ColumnName} = {x.ParameterName}"));
@@ -227,7 +229,16 @@ namespace RissoleDatabaseHelper.Core
 
         private object GetColumnPropertyValue<T>(RissoleColumn column, T model)
         {
+            if (column.IsComputed)
+                return CreateComputedValue(column.DataType);
             return column.Property.GetValue(model);
+        }
+
+        private object CreateComputedValue(Type dataType)
+        {
+            if (dataType == typeof(Guid)) return Guid.NewGuid();
+
+            throw new Exception("Unknow Computed Type: " + dataType.Name);
         }
 
         public static IRissoleProvider Instance {
