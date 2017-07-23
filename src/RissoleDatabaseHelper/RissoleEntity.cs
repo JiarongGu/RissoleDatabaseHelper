@@ -22,12 +22,12 @@ namespace RissoleDatabaseHelper.Core
             _rissoleTable = _rissoleProvider.GetRissoleTable<T>();
         }
 
-        public IRissoleCommand<T> Delete(Expression<Func<T, bool>> prdicate)
+        public int Delete(Expression<Func<T, bool>> prdicate)
         {
             var rissoleCommand = new RissoleCommand<T>(_dbConnection, _rissoleProvider);
             rissoleCommand.Script = _rissoleProvider.GetDeleteScript<T>();
 
-            return rissoleCommand.Where(prdicate);
+            return rissoleCommand.Where(prdicate).ExecuteNonQuery();
         }
 
         public int Delete(T model)
@@ -59,7 +59,7 @@ namespace RissoleDatabaseHelper.Core
             return ConcatRissoleCommands(rissoleCommands).ExecuteNonQuery();
         }
         
-        T Insert(T model)
+        public T Insert(T model)
         {
             var rissoleCommand = new RissoleCommand<T>(_dbConnection, _rissoleProvider);
             rissoleCommand.Script = _rissoleProvider.GetInsertScript<T>();

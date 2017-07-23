@@ -175,23 +175,15 @@ namespace RissoleDatabaseHelper.Core
                         commands = RissoleQueryDictionary.GetLastInsertCommands;
                         break;
                 }
-
-                dbConnection.Open();
+                
                 foreach (var command in commands)
                 {
-                    var dbCommand = dbConnection.CreateCommand();
-                    dbCommand.CommandText = command;
-                    try
+                    if (IsCommandVaild(dbConnection, command))
                     {
-                        dbCommand.ExecuteNonQuery();
                         vaildCommand = command;
                         break;
                     }
-                    catch {
-                        continue;
-                    }
                 }
-                dbConnection.Close();
 
                 if (string.IsNullOrEmpty(vaildCommand))
                     throw new RissoleException($"No vaild command for {dbConnection.ConnectionString}, {commandType.ToString()}");
@@ -202,6 +194,35 @@ namespace RissoleDatabaseHelper.Core
             return _connectionCommands[key];
         }
 
+        private bool IsCommandVaild(IDbConnection dbConnection, string command)
+        {
+            bool result = false;
+
+            dbConnection.Open();
+            var transaction = dbConnection.BeginTransaction();
+            try
+            {
+                using (var dbCommand = dbConnection.CreateCommand())
+                {
+                    dbCommand.CommandText = command;
+                    dbCommand.Transaction = transaction;
+                    dbCommand.ExecuteNonQuery();
+                }
+
+                result = true;
+            }
+            catch
+            {
+                result = false;
+            }
+
+            transaction.Rollback();
+            transaction.Dispose();
+            dbConnection.Close();
+
+            return result;
+        }
+        
         /// <summary>
         /// 
         /// </summary>
