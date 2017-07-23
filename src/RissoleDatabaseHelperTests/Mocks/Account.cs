@@ -10,7 +10,7 @@ namespace RissoleDatabaseHelperTests.Core.Mocks
     public class Account
     {
         [Column("account_id", IsComputed = true)]
-        [Key(KeyType.PrimaryKey)]
+        [PrimaryKey]
         public Guid AccountId { get; set; }
 
         [Column("username")]

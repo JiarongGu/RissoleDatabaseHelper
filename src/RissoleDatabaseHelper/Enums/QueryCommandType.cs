@@ -4,10 +4,8 @@ using System.Text;
 
 namespace RissoleDatabaseHelper.Core.Enums
 {
-    public enum CommandType
+    internal enum QueryCommandType
     {
-        Where,
-        Join,
-        Select
+        GetLastInsert,
     }
 }

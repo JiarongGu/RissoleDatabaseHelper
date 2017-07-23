@@ -27,9 +27,7 @@ namespace RissoleDatabaseHelper.Core
         IRissoleCommand<T> Where(T model);
 
         IRissoleCommand<T> Join<TJoin> (Expression<Func<T, TJoin, bool>> prdicate);
-        
-        IRissoleCommand<T> SetValues(T model, bool ignorePrimaryKey);
-
+       
         IRissoleCommand<T> Custom(string script, List<IDbDataParameter> parameters);
 
         IRissoleCommand<T> Custom(string script, params IDbDataParameter[] parameters);

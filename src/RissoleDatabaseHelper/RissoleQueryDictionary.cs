@@ -94,5 +94,13 @@ namespace RissoleDatabaseHelper.Core
                     return true;
             }
         }
+
+        public static readonly List<string> GetLastInsertCommands = new List<string>()
+        {
+            "SELECT LAST_INSERT_ID();",
+            "SELECT SCOPE_IDENTITY();",
+            "SELECT lastval();",
+            "SELECT SEQNAME.CURRVAL FROM DUAL;"
+        };
     }
 }

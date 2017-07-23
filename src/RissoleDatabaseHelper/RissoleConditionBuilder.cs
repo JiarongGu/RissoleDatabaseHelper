@@ -243,7 +243,7 @@ namespace RissoleDatabaseHelper.Core
             var parameterName = $"{valueName}_{commandStack}_{stack}";
 
             var rissoleScript = new RissoleScript();
-            rissoleScript.Parameters.Add(parameterName, value);
+            rissoleScript.Parameters.Add(new RissoleParameter(parameterName, value));
             rissoleScript.Script = $"@{parameterName}";
 
             return rissoleScript;

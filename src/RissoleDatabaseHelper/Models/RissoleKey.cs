@@ -7,12 +7,16 @@ namespace RissoleDatabaseHelper.Core.Models
 {
     internal class RissoleKey
     {
-        public RissoleKey() { }
-        public RissoleKey(KeyAttribute keyAttribute)
+        public RissoleKey(PrimaryKeyAttribute keyAttribute)
+        {
+            Type = KeyType.PrimaryKey;
+        }
+
+        public RissoleKey(ForeignKeyAttribute keyAttribute)
         {
             Table = keyAttribute.Table;
             Column = keyAttribute.Column;
-            Type = keyAttribute.Type;
+            Type = KeyType.ForeignKey;
         }
 
         public string Table { get; set; }

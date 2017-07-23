@@ -18,11 +18,13 @@ namespace RissoleDatabaseHelper.Core
 
         private Dictionary<Type, RissoleTable> _rissoleTables;
         private Dictionary<string, string> _rissoleScripts;
+        private Dictionary<Tuple<IDbConnection, QueryCommandType>, string> _connectionCommands;
 
         private RissoleProvider() {
             _rissoleTables = new Dictionary<Type, RissoleTable>();
             _rissoleDefinitionBuilder = new RissoleDefinitionBuilder();
             _rissoleConditionBuilder = new RissoleConditionBuilder();
+            _connectionCommands = new Dictionary<Tuple<IDbConnection, QueryCommandType>, string>();
         }
 
         public RissoleTable GetRissoleTable<T>()
@@ -65,28 +67,28 @@ namespace RissoleDatabaseHelper.Core
             return rissoleScript;
         }
 
-        public RissoleScript GetDeleteScript<T>()
+        public string GetDeleteScript<T>()
         {
             var table = GetRissoleTable<T>();
             var script = $"DELETE FROM {table.Name}";
 
-            return new RissoleScript(script);
+            return script;
         }
         
-        public RissoleScript GetInsertScript<T>()
+        public string GetInsertScript<T>()
         {
             var table = GetRissoleTable<T>();
             var script = $"INSERT INTO {table.Name}";
 
-            return new RissoleScript(script);
+            return script;
         }
 
-        public RissoleScript GetUpdateScript<T>()
+        public string GetUpdateScript<T>()
         {
             var table = GetRissoleTable<T>();
             var script = $"UPDATE {table.Name} SET";
 
-            return new RissoleScript(script);
+            return script;
         }
 
         public RissoleScript GetWhereScript<T>(Expression<Func<T, bool>> expression, int stack)
@@ -107,11 +109,11 @@ namespace RissoleDatabaseHelper.Core
 
             if (columns.Count == 0) throw new RissoleException($"Table {table.Name} has no primary key defined.");
 
-            var parameters = GetColumnParameters(table, columns, model, stack);
+            var parameters = GetRissoleParameters(table, columns, model, stack);
 
-            var script = $"WHERE {string.Join(" AND ", parameters.Item1)}";
+            var script = $"WHERE ({string.Join(" AND ", parameters.Select(x => $"{x.ColumnName} = {x.ParameterName}"))})";
 
-            return new RissoleScript(script, parameters.Item2);
+            return new RissoleScript(script, parameters);
         }
 
         public RissoleScript GetJoinScript<T, TJoin>(Expression<Func<T, TJoin, bool>> expression, int stack)
@@ -130,21 +132,72 @@ namespace RissoleDatabaseHelper.Core
         public RissoleScript GetInsertValueScript<T>(T model, int stack)
         {
             var table = GetRissoleTable<T>();
-            var columns = table.Columns.Where(x => !x.Keys.Exists(y => y.Type == KeyType.PrimaryKey)).ToList();
-            var parameters = GetColumnParameters(table, columns, model, stack);
+            var columns = table.Columns.Where(x => !x.IsGenerated).ToList();
 
-            var script = string.Join(", ", parameters.Item1);
-            return new RissoleScript(script, parameters.Item2);
+            var parameters = GetRissoleParameters(table, columns, model, stack);
+
+            var script = $"{string.Join(", ", parameters.Select(x => x.ColumnName))} VALUES ({string.Join(", ", parameters.Select(x => x.ParameterName))})";
+
+            return new RissoleScript(script, parameters);
         }
 
         public RissoleScript GetSetValueScript<T>(T model, int stack, bool includePirmaryKey)
         {
             var table = GetRissoleTable<T>();
             var columns = table.Columns.Where(x => includePirmaryKey || !x.Keys.Exists(y => y.Type == KeyType.PrimaryKey)).ToList();
-            var parameters = GetColumnParameters(table, columns, model, stack);
+            var parameters = GetRissoleParameters(table, columns, model, stack);
 
-            var script = string.Join(", ", parameters.Item1);
-            return new RissoleScript(script, parameters.Item2);
+            var script = string.Join(", ", parameters.Select(x => $"{x.ColumnName} = {x.ParameterName}"));
+
+            return new RissoleScript(script, parameters);
+        }
+        
+        /// <summary>
+        /// Get database dependent script based on connection and command types
+        /// </summary>
+        /// <param name="dbConnection"></param>
+        /// <param name="commandType"></param>
+        /// <returns></returns>
+        public string GetConnectionScript(IDbConnection dbConnection, QueryCommandType commandType)
+        {
+            var key = new Tuple<IDbConnection, QueryCommandType>(dbConnection, commandType);
+
+            if (!_connectionCommands.ContainsKey(key))
+            {
+                var commands = new List<string>();
+                var vaildCommand = string.Empty;
+
+                switch (commandType)
+                {
+                    case QueryCommandType.GetLastInsert:
+                        commands = RissoleQueryDictionary.GetLastInsertCommands;
+                        break;
+                }
+
+                dbConnection.Open();
+                foreach (var command in commands)
+                {
+                    var dbCommand = dbConnection.CreateCommand();
+                    dbCommand.CommandText = command;
+                    try
+                    {
+                        dbCommand.ExecuteNonQuery();
+                        vaildCommand = command;
+                        break;
+                    }
+                    catch {
+                        continue;
+                    }
+                }
+                dbConnection.Close();
+
+                if (string.IsNullOrEmpty(vaildCommand))
+                    throw new RissoleException($"No vaild command for {dbConnection.ConnectionString}, {commandType.ToString()}");
+
+                _connectionCommands.Add(key, vaildCommand);
+            }
+
+            return _connectionCommands[key];
         }
 
         /// <summary>
@@ -156,20 +209,25 @@ namespace RissoleDatabaseHelper.Core
         /// <param name="model"></param>
         /// <param name="stack"></param>
         /// <returns>ColumnNames, Parameters</returns>
-        private Tuple<List<string>, Dictionary<string, object>> GetColumnParameters<T>(RissoleTable table, List<RissoleColumn> columns, T model, int stack)
+        private List<RissoleParameter> GetRissoleParameters<T>(RissoleTable table, List<RissoleColumn> columns, T model, int stack)
         {
-            var parameters = new Dictionary<string, object>();
-            var columnNames = new List<string>();
-
+            var parameters = new List<RissoleParameter>();
+            
             foreach (var column in columns)
             {
                 var columnName = $"{table.Name}.{column.Name}";
-                var valueName = $"@{columnName}_{stack}";
-                parameters.Add(valueName, column.Property.GetValue(model));
-                columnNames.Add($"({columnName} = {valueName})");
+                var parameterName = $"@{columnName}_{stack}";
+                var value = GetColumnPropertyValue(column, model);
+                
+                parameters.Add(new RissoleParameter(columnName, parameterName, value));
             }
 
-            return new Tuple<List<string>, Dictionary<string, object>>(columnNames, parameters);
+            return parameters;
+        }
+
+        private object GetColumnPropertyValue<T>(RissoleColumn column, T model)
+        {
+            return column.Property.GetValue(model);
         }
 
         public static IRissoleProvider Instance {

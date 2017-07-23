@@ -59,16 +59,14 @@ namespace RissoleDatabaseHelper.Core
         {
             List<RissoleKey> keys = new List<RissoleKey>();
 
-            List<KeyAttribute> attributes = property.GetCustomAttributes<KeyAttribute>().ToList();
+            PrimaryKeyAttribute primaryKeyAttribute = property.GetCustomAttribute<PrimaryKeyAttribute>();
+            if(primaryKeyAttribute != null)
+                keys.Add(new RissoleKey(primaryKeyAttribute));
 
-            if(attributes.Count == 0) return keys;
+            PrimaryKeyAttribute foreignKeyKeyAttribute = property.GetCustomAttribute<PrimaryKeyAttribute>();
+            if (foreignKeyKeyAttribute != null)
+                keys.Add(new RissoleKey(foreignKeyKeyAttribute));
             
-            foreach (var attribute in attributes)
-            {
-                RissoleKey key = new RissoleKey(attribute);
-                keys.Add(key);
-            }
-
             return keys;
         }
 
@@ -82,9 +80,7 @@ namespace RissoleDatabaseHelper.Core
 
             // override table name if attribute defines
             if (tableAttribute.Name != null)
-            {
                 table.Name = tableAttribute.Name;
-            }
 
             // create table columns
             table.Columns = BuildColumns(type);

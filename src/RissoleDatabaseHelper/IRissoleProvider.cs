@@ -1,4 +1,5 @@
-﻿using RissoleDatabaseHelper.Core.Models;
+﻿using RissoleDatabaseHelper.Core.Enums;
+using RissoleDatabaseHelper.Core.Models;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -27,10 +28,12 @@ namespace RissoleDatabaseHelper.Core
 
         RissoleScript GetFirstScript<T>(Expression<Func<T, object>> expression);
 
-        RissoleScript GetDeleteScript<T>();
+        string GetDeleteScript<T>();
 
-        RissoleScript GetInsertScript<T>();
+        string GetInsertScript<T>();
 
-        RissoleScript GetUpdateScript<T>();
+        string GetUpdateScript<T>();
+
+        string GetConnectionScript(IDbConnection dbConnection, QueryCommandType commandType);
     }
 }

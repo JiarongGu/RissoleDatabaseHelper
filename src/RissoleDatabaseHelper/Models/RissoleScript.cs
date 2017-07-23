@@ -9,27 +9,24 @@ namespace RissoleDatabaseHelper.Core.Models
     internal class RissoleScript
     {
         public RissoleScript() {
-            Parameters = new Dictionary<string, object>();
+            Parameters = new List<RissoleParameter>();
         }
 
-        public RissoleScript(string script, List<Dictionary<string, object>> parameters) 
+        public RissoleScript(string script, List<List<RissoleParameter>> parametersGroup) 
             : this()
         {
             Script = script;
-            foreach (var parameterDisctionary in parameters)
+            foreach (var parameters in parametersGroup)
             {
-                foreach (var parameter in parameterDisctionary)
-                {
-                    Parameters.Add(parameter.Key, parameter.Value);
-                }
+                Parameters.AddRange(parameters);
             }
         }
 
-        public RissoleScript(string script, params Dictionary<string, object>[] parameters)
+        public RissoleScript(string script, params List<RissoleParameter>[] parameters)
             : this(script, parameters.ToList()) { }
 
         public string Script { get; set; }
 
-        public Dictionary<string ,object> Parameters { get; set; }
+        public List<RissoleParameter> Parameters { get; set; }
     }
 }

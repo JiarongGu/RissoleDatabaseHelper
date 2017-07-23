@@ -4,9 +4,9 @@ using System.Text;
 
 namespace RissoleDatabaseHelper.Core.Enums
 {
-    public enum KeyType
+    internal enum KeyType
     {
         PrimaryKey,
-        ForeignKey
+        ForeignKey,
     }
 }

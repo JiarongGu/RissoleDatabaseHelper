@@ -89,6 +89,20 @@ namespace RissoleDatabaseHelperTests.Core
 
             Assert.AreEqual(command.Parameters.Count, 30);
         }
+        
+
+        [TestMethod]
+        public void TestCommandBuildBulkInsert1()
+        {
+            var accounts = new List<Account>();
+            accounts.Add(new Account() { AccountId = Guid.NewGuid() });
+            accounts.Add(new Account() { AccountId = Guid.NewGuid() });
+            accounts.Add(new Account() { AccountId = Guid.NewGuid() });
+
+            var command = _accounts.Update(accounts);
+
+            Assert.AreEqual(command.Parameters.Count, 30);
+        }
 
         [TestMethod]
         public void TestSelectionScriptBuild()

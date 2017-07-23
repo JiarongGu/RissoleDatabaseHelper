@@ -126,12 +126,17 @@ namespace RissoleDatabaseHelper.Core
             return ConcatScript(rissoleScript);
         }
 
-        public IRissoleCommand<T> SetValues(T model, bool includePirmaryKey)
+        internal RissoleCommand<T> SetValues(T model, bool includePirmaryKey)
         {
             var rissoleScript = _rissoleProvider.GetSetValueScript(model, Stack, includePirmaryKey);
             return ConcatScript(rissoleScript);
         }
 
+        internal RissoleCommand<T> InsertValues(T model)
+        {
+            var rissoleScript = _rissoleProvider.GetInsertValueScript(model, Stack);
+            return ConcatScript(rissoleScript);
+        }
 
         public IRissoleCommand<T> Custom(string script, List<IDbDataParameter> parameters)
         {
@@ -191,12 +196,7 @@ namespace RissoleDatabaseHelper.Core
             var executor = new RissoleExecutor<T>(this);
             return executor.ExecuteNonQuery(BuildCommand());
         }
-
-        public async Task<int> ExecuteNonQueryAsync()
-        {
-            return await Task.Run(() => ExecuteNonQuery());
-        }
-
+        
         public object ExecuteScalar()
         {
             var executor = new RissoleExecutor<T>(this);
@@ -208,7 +208,7 @@ namespace RissoleDatabaseHelper.Core
             _dbConnection.Close();
         }
 
-        private IRissoleCommand<T> ConcatScript(RissoleScript rissoleScript)
+        private RissoleCommand<T> ConcatScript(RissoleScript rissoleScript)
         {
             var rissoleCommand = new RissoleCommand<T>(this);
             rissoleCommand.Script += " " + rissoleScript.Script;
@@ -224,7 +224,7 @@ namespace RissoleDatabaseHelper.Core
             foreach (var scriptParam in rissoleScript.Parameters)
             {
                 var parameter = tempCommand.CreateParameter();
-                parameter.ParameterName = scriptParam.Key;
+                parameter.ParameterName = scriptParam.ParameterName;
 
                 if (scriptParam.Value == null)
                 {
