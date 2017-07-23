@@ -39,12 +39,17 @@ namespace RissoleDatabaseHelper.Core
             _script = script;
         }
 
+        internal RissoleCommand(IDbConnection dbConnection, IRissoleProvider rissoleProvider, int stack)
+            :this(dbConnection, rissoleProvider)
+        {
+            _stack = stack;
+        }
+
         internal RissoleCommand(IDbConnection dbConnection, IRissoleProvider rissoleProvider)
         {
             _dbConnection = dbConnection;
             _rissoleProvider = rissoleProvider;
             _parameters = new List<IDbDataParameter>();
-            _stack = 0;
         }
 
         internal RissoleCommand(RissoleCommand<T> rissoleCommand)
@@ -115,17 +120,18 @@ namespace RissoleDatabaseHelper.Core
             return ConcatScript(rissoleScript);
         }
 
-        public IRissoleCommand<T> Find(T model)
+        public IRissoleCommand<T> Where(T model)
         {
-            var rissoleScript = _rissoleProvider.GetPrimaryScript(model, Stack);
+            var rissoleScript = _rissoleProvider.GetWhereScript(model, Stack);
             return ConcatScript(rissoleScript);
         }
 
-        public IRissoleCommand<T> Values(T model, bool ignorePrimaryKey)
+        public IRissoleCommand<T> SetValues(T model, bool includePirmaryKey)
         {
-            var rissoleScript = _rissoleProvider.GetSetValueScript(model, Stack, ignorePrimaryKey);
+            var rissoleScript = _rissoleProvider.GetSetValueScript(model, Stack, includePirmaryKey);
             return ConcatScript(rissoleScript);
         }
+
 
         public IRissoleCommand<T> Custom(string script, List<IDbDataParameter> parameters)
         {

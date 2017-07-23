@@ -6,6 +6,7 @@ using System.Linq.Expressions;
 using System.Data;
 using System.Linq;
 using RissoleDatabaseHelper.Core.Enums;
+using RissoleDatabaseHelper.Core.Exceptions;
 
 namespace RissoleDatabaseHelper.Core
 {
@@ -16,7 +17,8 @@ namespace RissoleDatabaseHelper.Core
         private RissoleConditionBuilder _rissoleConditionBuilder;
 
         private Dictionary<Type, RissoleTable> _rissoleTables;
-        
+        private Dictionary<string, string> _rissoleScripts;
+
         private RissoleProvider() {
             _rissoleTables = new Dictionary<Type, RissoleTable>();
             _rissoleDefinitionBuilder = new RissoleDefinitionBuilder();
@@ -82,7 +84,7 @@ namespace RissoleDatabaseHelper.Core
         public RissoleScript GetUpdateScript<T>()
         {
             var table = GetRissoleTable<T>();
-            var script = $"UPDATE {table.Name}";
+            var script = $"UPDATE {table.Name} SET";
 
             return new RissoleScript(script);
         }
@@ -98,6 +100,20 @@ namespace RissoleDatabaseHelper.Core
             return rissoleScript;
         }
 
+        public RissoleScript GetWhereScript<T>(T model, int stack)
+        {
+            var table = GetRissoleTable<T>();
+            var columns = table.Columns.Where(x => x.Keys.Exists(y => y.Type == KeyType.PrimaryKey)).ToList();
+
+            if (columns.Count == 0) throw new RissoleException($"Table {table.Name} has no primary key defined.");
+
+            var parameters = GetColumnParameters(table, columns, model, stack);
+
+            var script = $"WHERE {string.Join(" AND ", parameters.Item1)}";
+
+            return new RissoleScript(script, parameters.Item2);
+        }
+
         public RissoleScript GetJoinScript<T, TJoin>(Expression<Func<T, TJoin, bool>> expression, int stack)
         {
             var joinTable = GetRissoleTable<TJoin>();
@@ -111,25 +127,23 @@ namespace RissoleDatabaseHelper.Core
             return rissoleScript;
         }
 
-        public RissoleScript GetPrimaryScript<T>(T model, int stack)
+        public RissoleScript GetInsertValueScript<T>(T model, int stack)
         {
             var table = GetRissoleTable<T>();
-            var columns = table.Columns.Where(x => x.Keys.Exists(y => y.Type == KeyType.PrimaryKey)).ToList();
-
+            var columns = table.Columns.Where(x => !x.Keys.Exists(y => y.Type == KeyType.PrimaryKey)).ToList();
             var parameters = GetColumnParameters(table, columns, model, stack);
 
-            var script = string.Join(" AND ", parameters.Item1);
-
+            var script = string.Join(", ", parameters.Item1);
             return new RissoleScript(script, parameters.Item2);
         }
 
-        public RissoleScript GetSetValueScript<T>(T model, int stack, bool ignorePrimaryKey)
+        public RissoleScript GetSetValueScript<T>(T model, int stack, bool includePirmaryKey)
         {
             var table = GetRissoleTable<T>();
-            var columns = table.Columns.Where(x => !(ignorePrimaryKey && x.Keys.Exists(y => y.Type == KeyType.PrimaryKey))).ToList();
+            var columns = table.Columns.Where(x => includePirmaryKey || !x.Keys.Exists(y => y.Type == KeyType.PrimaryKey)).ToList();
             var parameters = GetColumnParameters(table, columns, model, stack);
 
-            var script = string.Join(" , ", parameters.Item1);
+            var script = string.Join(", ", parameters.Item1);
             return new RissoleScript(script, parameters.Item2);
         }
 
@@ -157,7 +171,7 @@ namespace RissoleDatabaseHelper.Core
 
             return new Tuple<List<string>, Dictionary<string, object>>(columnNames, parameters);
         }
-        
+
         public static IRissoleProvider Instance {
             get {
                 if (_rissoleProvider == null)

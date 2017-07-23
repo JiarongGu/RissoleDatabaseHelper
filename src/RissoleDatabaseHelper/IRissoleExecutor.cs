@@ -10,9 +10,9 @@ namespace RissoleDatabaseHelper.Core
         List<T> ExecuteReader(IDbCommand command);
 
         int ExecuteNonQuery(IDbCommand command);
-
+        
         object ExecuteScalar(IDbCommand command);
-
+        
         T Insert(IDbCommand command, T model);
     }
 }

@@ -24,7 +24,8 @@ namespace RissoleDatabaseHelper.Core
             {
                 //create column based on column attribute
                 RissoleColumn column = BuildRissoleColumn(property);
-                columns.Add(column);
+                if(column != null)
+                    columns.Add(column);
             }
 
             return columns;
@@ -32,27 +33,22 @@ namespace RissoleDatabaseHelper.Core
 
         public RissoleColumn BuildRissoleColumn(PropertyInfo property)
         {
-            CustomAttributeData columnAttribute = property.CustomAttributes.FirstOrDefault(x => x.AttributeType == typeof(ColumnAttribute));
+            ColumnAttribute attribute = property.GetCustomAttribute<ColumnAttribute>();
 
-            if (columnAttribute == null)
-                return null;
+            if (attribute == null) return null;
 
             //Default Data Definition
             RissoleColumn column = new RissoleColumn(property);
 
-            //Update By Attribute if exists
-            foreach (var value in columnAttribute.NamedArguments)
-            {
-                switch (value.MemberName)
-                {
-                    case "Name": column.Name = (string)value.TypedValue.Value; break;
-                    case "DataType": column.DataType = (Type)value.TypedValue.Value;  break;
-                    case "IsGenerated": column.IsGenerated = (bool)value.TypedValue.Value; break;
-                    case "IsComputed": column.IsComputed = (bool)value.TypedValue.Value; break;
-                    default: throw new Exception("Unknow Attribute: " + value.MemberName);
-                }
-            }
-            
+            if (!string.IsNullOrEmpty(attribute.Name))
+                column.Name = attribute.Name;
+
+            if (attribute.DataType != null)
+                column.DataType = attribute.DataType;
+
+            column.IsGenerated = attribute.IsGenerated;
+            column.IsComputed = attribute.IsComputed;
+
             //create keys based on key attribute
             column.Keys = BuildRissoleKeys(property);
 
@@ -63,28 +59,13 @@ namespace RissoleDatabaseHelper.Core
         {
             List<RissoleKey> keys = new List<RissoleKey>();
 
-            List<CustomAttributeData> keyAttributes = property.CustomAttributes.Where(x => x.AttributeType == typeof(KeyAttribute)).ToList();
+            List<KeyAttribute> attributes = property.GetCustomAttributes<KeyAttribute>().ToList();
 
-            if(keyAttributes.Count == 0) return keys;
+            if(attributes.Count == 0) return keys;
             
-            foreach (var foreignKeyAttribute in keyAttributes)
+            foreach (var attribute in attributes)
             {
-                RissoleKey key = new RissoleKey();
-
-                foreach (var argument in foreignKeyAttribute.NamedArguments)
-                {
-                    var value = argument.TypedValue.Value;
-                    var name = argument.MemberName;
-
-                    switch (name)
-                    {
-                        case "Table": key.TableName = (string)value; break;
-                        case "Column": key.ColumnName = (string)value; break;
-                        case "Type": key.Type = (KeyType)value; break;
-                        default: throw new Exception("Unknow Attribute: " + name);
-                    }
-                }
-
+                RissoleKey key = new RissoleKey(attribute);
                 keys.Add(key);
             }
 
@@ -94,7 +75,7 @@ namespace RissoleDatabaseHelper.Core
         public RissoleTable BuildRissoleTable(Type type)
         {
             // in this function table attribute should never be null
-            var tableAttribute = type.GetTypeInfo().GetCustomAttributes<TableAttribute>().First();
+            var tableAttribute = type.GetTypeInfo().GetCustomAttribute<TableAttribute>();
 
             // define new table, default as class name
             var table = new RissoleTable(type);

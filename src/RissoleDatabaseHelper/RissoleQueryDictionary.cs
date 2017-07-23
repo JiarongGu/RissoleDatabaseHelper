@@ -8,10 +8,6 @@ namespace RissoleDatabaseHelper.Core
 {
     internal static class RissoleQueryDictionary
     {
-        public static string FieldBegin = "`";
-
-        public static string FieldEnd = "`";
-
         public static readonly Dictionary<Type, DbType> TypeMap = new Dictionary<Type, DbType>()
         {
             {typeof(byte), DbType.Byte},

@@ -27,12 +27,11 @@ namespace RissoleDatabaseHelper.Core
         /// <returns></returns>
         public List<T> ExecuteReader(IDbCommand command)
         {
-            command.Connection = _rissoleCommand.Connection;
             List<T> models = new List<T>();
 
             try
             {
-                command.Connection.Open();
+                _rissoleCommand.Connection.Open();
                 IDataReader reader = command.ExecuteReader();
 
                 while (reader.Read())
@@ -42,12 +41,12 @@ namespace RissoleDatabaseHelper.Core
             }
             catch (Exception ex)
             {
-                throw new Exception("MySqlExecutor.ExecuteReaderAsync -> Read Failed", ex);
+                throw new Exception("MySqlExecutor.ExecuteReader -> Read Failed", ex);
             }
             finally
             {
                 command.Dispose();
-                command.Connection.Close();
+                _rissoleCommand.Connection.Close();
             }
 
             return models;
@@ -61,22 +60,21 @@ namespace RissoleDatabaseHelper.Core
         /// <returns></returns>
         public int ExecuteNonQuery(IDbCommand command)
         {
-            command.Connection = _rissoleCommand.Connection;
             int result;
 
             try
             {
-                command.Connection.Open();
+                _rissoleCommand.Connection.Open();
                 result = command.ExecuteNonQuery();
             }
             catch (Exception ex)
             {
-                throw new Exception("MySqlExecutor.ExecuteNonQueryAsync -> Execute Failed", ex);
+                throw new Exception("MySqlExecutor.ExecuteNonQuery -> Execute Failed", ex);
             }
             finally
             {
                 command.Dispose();
-                command.Connection.Close();
+                _rissoleCommand.Connection.Close();
             }
 
             return result;
@@ -89,22 +87,21 @@ namespace RissoleDatabaseHelper.Core
         /// <returns></returns>
         public object ExecuteScalar(IDbCommand command)
         {
-            command.Connection = _rissoleCommand.Connection;
             object result;
 
             try
             {
-                command.Connection.Open();
+                _rissoleCommand.Connection.Open();
                 result = command.ExecuteScalar();
             }
             catch (Exception ex)
             {
-                throw new Exception("MySqlExecutor.ExecuteScalarAsync -> Execute Failed", ex);
+                throw new Exception("MySqlExecutor.ExecuteScalar -> Execute Failed", ex);
             }
             finally
             {
                 command.Dispose();
-                command.Connection.Close();
+                _rissoleCommand.Connection.Close();
             }
 
             return result;

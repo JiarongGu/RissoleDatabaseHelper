@@ -26,9 +26,9 @@ namespace RissoleDatabaseHelper.Core
 
         IRissoleCommand<T> Delete(T model);
 
-        IRissoleCommand<T> Update(T model);
+        IRissoleCommand<T> Update(T model, bool includePirmaryKey = false);
 
-        IRissoleCommand<T> Update(IList<T> model);
+        IRissoleCommand<T> Update(IList<T> models, bool includePirmaryKey = false);
         
         IRissoleCommand<T> Select(Expression<Func<T, object>> prdicate);
 

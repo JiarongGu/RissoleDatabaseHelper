@@ -61,6 +61,33 @@ namespace RissoleDatabaseHelperTests.Core
             var command = _accounts.Delete(account);
 
             Assert.AreEqual(command.Parameters.Count, 1);
+            Assert.IsTrue(command.Script.Contains("DELETE FROM account"));
+            Assert.IsTrue(command.Script.Contains("WHERE (accounts.account_id"));
+        }
+
+        [TestMethod]
+        public void TestCommandBuildUpdate1()
+        {
+            var account = new Account();
+            account.AccountId = Guid.NewGuid();
+            var command = _accounts.Update(account);
+
+            Assert.AreEqual(command.Parameters.Count, 10);
+            Assert.IsTrue(command.Script.Contains("UPDATE account"));
+            Assert.IsTrue(command.Script.Contains("WHERE (accounts.account_id"));
+        }
+
+        [TestMethod]
+        public void TestCommandBuildBulkUpdate1()
+        {
+            var accounts = new List<Account>();
+            accounts.Add(new Account() { AccountId = Guid.NewGuid() });
+            accounts.Add(new Account() { AccountId = Guid.NewGuid() });
+            accounts.Add(new Account() { AccountId = Guid.NewGuid() });
+
+            var command = _accounts.Update(accounts);
+
+            Assert.AreEqual(command.Parameters.Count, 30);
         }
 
         [TestMethod]

@@ -22,10 +22,7 @@ namespace RissoleDatabaseHelper.Core.Attributes
 
         //is database generated
         public bool IsGenerated { get; set; }
-
-        //is primary key
-        public bool IsPrimaryKey { get; set; }
-
+        
         //executor generated
         public bool IsComputed { get; set; }
     }

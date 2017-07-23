@@ -24,8 +24,7 @@ namespace RissoleDatabaseHelper.Core
         public IRissoleCommand<T> Delete(Expression<Func<T, bool>> prdicate)
         {
             var rissoleCommand = new RissoleCommand<T>(_dbConnection, _rissoleProvider);
-            var rissoleScript = _rissoleProvider.GetDeleteScript<T>();
-            rissoleCommand.Script = rissoleScript.Script;
+            rissoleCommand.Script = _rissoleProvider.GetDeleteScript<T>().Script;
 
             return rissoleCommand.Where(prdicate);
         }
@@ -33,27 +32,51 @@ namespace RissoleDatabaseHelper.Core
         public IRissoleCommand<T> Delete(T model)
         {
             var rissoleCommand = new RissoleCommand<T>(_dbConnection, _rissoleProvider);
-            var rissoleScript = _rissoleProvider.GetDeleteScript<T>();
+            rissoleCommand.Script = _rissoleProvider.GetDeleteScript<T>().Script;
 
-            return rissoleCommand.Find(model);
+            return rissoleCommand.Where(model);
         }
         
-        public IRissoleCommand<T> Update(T model)
+        public IRissoleCommand<T> Update(T model, bool includePirmaryKey = false)
         {
-            throw new NotImplementedException();
+            IRissoleCommand<T> rissoleCommand = new RissoleCommand<T>(_dbConnection, _rissoleProvider);
+            rissoleCommand.Script = _rissoleProvider.GetUpdateScript<T>().Script;
+
+            rissoleCommand = rissoleCommand.SetValues(model, false);
+            rissoleCommand = rissoleCommand.Where(model);
+
+            return rissoleCommand;
         }
 
-        public IRissoleCommand<T> Update(IList<T> model)
+        public IRissoleCommand<T> Update(IList<T> models, bool includePirmaryKey = false)
         {
-            throw new NotImplementedException();
+            var rissoleCommands = new List<IRissoleCommand<T>>();
+            var stack = 0;
+            foreach (var model in models)
+            {
+                IRissoleCommand<T> rissoleCommand = new RissoleCommand<T>(_dbConnection, _rissoleProvider, stack);
+                rissoleCommand.Script = _rissoleProvider.GetUpdateScript<T>().Script;
+                rissoleCommand = rissoleCommand.SetValues(model, false);
+                rissoleCommand = rissoleCommand.Where(model);
+
+                stack = rissoleCommand.Stack;
+                rissoleCommands.Add(rissoleCommand);
+            }
+
+            var combinedScript = string.Join(" ", rissoleCommands.Select(x => x.Script + ";").ToList());
+            var combinedParameters = new List<IDbDataParameter>();
+            foreach (var rissoleCommand in rissoleCommands)
+            {
+                combinedParameters.AddRange(rissoleCommand.Parameters);
+            }
+
+            return new RissoleCommand<T>(_dbConnection, _rissoleProvider, combinedScript, combinedParameters);
         }
 
         public IRissoleCommand<T> Select(Expression<Func<T, object>> prdicate)
         {
             var rissoleCommand = new RissoleCommand<T>(_dbConnection, _rissoleProvider);
-            var rissoleScript = _rissoleProvider.GetSelectScript(prdicate);
-
-            rissoleCommand.Script = rissoleScript.Script;
+            rissoleCommand.Script = _rissoleProvider.GetSelectScript(prdicate).Script;
 
             return rissoleCommand;
         }
@@ -61,9 +84,7 @@ namespace RissoleDatabaseHelper.Core
         public IRissoleCommand<T> First(Expression<Func<T, object>> prdicate)
         {
             var rissoleCommand = new RissoleCommand<T>(_dbConnection, _rissoleProvider);
-            var rissoleScript = _rissoleProvider.GetSelectScript(prdicate);
-
-            rissoleCommand.Script = rissoleScript.Script;
+            rissoleCommand.Script = _rissoleProvider.GetSelectScript(prdicate).Script;
 
             return rissoleCommand;
         }
