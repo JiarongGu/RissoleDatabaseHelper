@@ -134,7 +134,7 @@ namespace RissoleDatabaseHelper.Core
             var table = GetRissoleTable<T>();
             var columns = table.Columns.Where(x => !x.IsGenerated).ToList();
 
-            var parameters = GetRissoleParameters(table, columns, model, stack);
+            var parameters = GetRissoleInsertParameters(table, columns, model, stack);
 
             var script = $"{string.Join(", ", parameters.Select(x => x.ColumnName))} VALUES ({string.Join(", ", parameters.Select(x => x.ParameterName))})";
 
@@ -172,7 +172,7 @@ namespace RissoleDatabaseHelper.Core
                 switch (commandType)
                 {
                     case QueryCommandType.GetLastInsert:
-                        commands = RissoleQueryDictionary.GetLastInsertCommands;
+                        commands = RissoleDictionary.GetLastInsertCommands;
                         break;
                 }
                 
@@ -199,27 +199,29 @@ namespace RissoleDatabaseHelper.Core
             bool result = false;
 
             dbConnection.Open();
-            var transaction = dbConnection.BeginTransaction();
-            try
+            using (var transaction = dbConnection.BeginTransaction())
             {
-                using (var dbCommand = dbConnection.CreateCommand())
+                try
                 {
-                    dbCommand.CommandText = command;
-                    dbCommand.Transaction = transaction;
-                    dbCommand.ExecuteNonQuery();
+                    using (var dbCommand = dbConnection.CreateCommand())
+                    {
+                        dbCommand.CommandText = command;
+                        dbCommand.Transaction = transaction;
+                        dbCommand.ExecuteNonQuery();
+                    }
+
+                    result = true;
+                }
+                catch
+                {
+                    result = false;
                 }
 
-                result = true;
-            }
-            catch
-            {
-                result = false;
+                transaction.Rollback();
+                transaction.Dispose();
             }
 
-            transaction.Rollback();
-            transaction.Dispose();
             dbConnection.Close();
-
             return result;
         }
         
@@ -240,8 +242,24 @@ namespace RissoleDatabaseHelper.Core
             {
                 var columnName = $"{table.Name}.{column.Name}";
                 var parameterName = $"@{columnName}_{stack}";
-                var value = GetColumnPropertyValue(column, model);
+                var value = column.Property.GetValue(model);
                 
+                parameters.Add(new RissoleParameter(columnName, parameterName, value));
+            }
+
+            return parameters;
+        }
+
+        private List<RissoleParameter> GetRissoleInsertParameters<T>(RissoleTable table, List<RissoleColumn> columns, T model, int stack)
+        {
+            var parameters = new List<RissoleParameter>();
+
+            foreach (var column in columns)
+            {
+                var columnName = $"{table.Name}.{column.Name}";
+                var parameterName = $"@{columnName}_{stack}";
+                var value = GetColumnPropertyValue(column, model);
+
                 parameters.Add(new RissoleParameter(columnName, parameterName, value));
             }
 
@@ -252,6 +270,7 @@ namespace RissoleDatabaseHelper.Core
         {
             if (column.IsComputed)
                 return CreateComputedValue(column.DataType);
+
             return column.Property.GetValue(model);
         }
 

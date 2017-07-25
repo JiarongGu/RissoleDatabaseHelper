@@ -80,7 +80,7 @@ namespace RissoleDatabaseHelper.Core
         {
             var right = ResolveScript(expression.Operand, parameters, commandStack, ++stack);
             var isNull = right.Parameters.FirstOrDefault().Value == null;
-            var node = RissoleQueryDictionary.NodeTypeToString(expression.NodeType, isNull);
+            var node = RissoleDictionary.NodeTypeToString(expression.NodeType, isNull);
 
             var script = $"({node} {right.Script})";
             var rissoleScript = new RissoleScript(script, right.Parameters);
@@ -94,7 +94,7 @@ namespace RissoleDatabaseHelper.Core
             var left = ResolveScript(expression.Left, parameters, commandStack, ++stack);
             var right = ResolveScript(expression.Right, parameters, commandStack, ++stack);
             var isNull = right.Parameters.Count > 0 && right.Parameters.First().Value == null;
-            var node = RissoleQueryDictionary.NodeTypeToString(expression.NodeType, isNull);
+            var node = RissoleDictionary.NodeTypeToString(expression.NodeType, isNull);
 
             var script = $"({left.Script} {node} {right.Script})";
             var rissoleScript = new RissoleScript(script, left.Parameters, right.Parameters);

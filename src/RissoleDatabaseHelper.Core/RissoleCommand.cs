@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace RissoleDatabaseHelper.Core
 {
-    public class RissoleCommand<T> : IRissoleCommand<T>, IDisposable
+    public class RissoleCommand<T> : IRissoleCommand<T>
     {
         private IDbConnection _dbConnection;
         private IRissoleProvider _rissoleProvider;
@@ -151,63 +151,7 @@ namespace RissoleDatabaseHelper.Core
         {
             return Custom(script, new List<IDbDataParameter>(parameters));
         }
-
-        public IDbCommand BuildCommand()
-        {
-            if (_command == null)
-            {
-                _command = Connection.CreateCommand();
-                _command.CommandText = _script;
-
-                foreach (var parameter in Parameters)
-                {
-                    _command.Parameters.Add(parameter);
-                }
-            }
-
-            return _command;
-        }
         
-        public T First()
-        {
-            var executor = new RissoleExecutor<T>(this);
-            return executor.ExecuteReader(BuildCommand()).First();
-        }
-
-        public T FirstOrDefault()
-        {
-            var executor = new RissoleExecutor<T>(this);
-            return executor.ExecuteReader(BuildCommand()).FirstOrDefault();
-        }
-
-        public List<T> ToList()
-        {
-            return ExecuteReader();
-        }
-
-        public List<T> ExecuteReader()
-        {
-            var executor = new RissoleExecutor<T>(this);
-            return executor.ExecuteReader(BuildCommand());
-        }
-        
-        public int ExecuteNonQuery()
-        {
-            var executor = new RissoleExecutor<T>(this);
-            return executor.ExecuteNonQuery(BuildCommand());
-        }
-        
-        public object ExecuteScalar()
-        {
-            var executor = new RissoleExecutor<T>(this);
-            return executor.ExecuteScalar(BuildCommand());
-        }
-
-        public void Dispose()
-        {
-            _dbConnection.Close();
-        }
-
         private RissoleCommand<T> ConcatScript(RissoleScript rissoleScript)
         {
             var rissoleCommand = new RissoleCommand<T>(this);
@@ -233,7 +177,7 @@ namespace RissoleDatabaseHelper.Core
                 else
                 {
                     parameter.Value = scriptParam.Value;
-                    parameter.DbType = RissoleQueryDictionary.TypeMap[scriptParam.Value.GetType()];
+                    parameter.DbType = RissoleDictionary.DbTypeMap[scriptParam.Value.GetType()];
                 }
 
                 parameters.Add(parameter);

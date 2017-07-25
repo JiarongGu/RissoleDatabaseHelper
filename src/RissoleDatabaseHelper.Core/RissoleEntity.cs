@@ -22,28 +22,29 @@ namespace RissoleDatabaseHelper.Core
             _rissoleTable = _rissoleProvider.GetRissoleTable<T>();
         }
 
-        public int Delete(Expression<Func<T, bool>> prdicate)
+        public IRissoleCommand<T> Delete(Expression<Func<T, bool>> prdicate)
         {
             var rissoleCommand = new RissoleCommand<T>(_dbConnection, _rissoleProvider);
             rissoleCommand.Script = _rissoleProvider.GetDeleteScript<T>();
 
-            return rissoleCommand.Where(prdicate).ExecuteNonQuery();
+            return rissoleCommand.Where(prdicate);
         }
 
-        public int Delete(T model)
+        public IRissoleCommand<T> Delete(T model)
         {
             var rissoleCommand = new RissoleCommand<T>(_dbConnection, _rissoleProvider);
             rissoleCommand.Script = _rissoleProvider.GetDeleteScript<T>();
 
-            return rissoleCommand.Where(model).ExecuteNonQuery();
+            return rissoleCommand.Where(model);
         }
         
-        public int Update(T model, bool includePirmaryKey = false)
+        public IRissoleCommand<T> Update(T model, bool includePirmaryKey = false)
         {
-            return BuildUpdateRissoleCommand(model, includePirmaryKey, 0).ExecuteNonQuery();
+            var rissoleCommand = BuildUpdateRissoleCommand(model, includePirmaryKey, 0);
+            return rissoleCommand;
         }
 
-        public int Update(IList<T> models, bool includePirmaryKey = false)
+        public IRissoleCommand<T> Update(IList<T> models, bool includePirmaryKey = false)
         {
             var rissoleCommands = new List<IRissoleCommand<T>>();
 
@@ -56,17 +57,16 @@ namespace RissoleDatabaseHelper.Core
                 rissoleCommands.Add(rissoleCommand);
             }
             
-            return ConcatRissoleCommands(rissoleCommands).ExecuteNonQuery();
+            return ConcatRissoleCommands(rissoleCommands);
         }
         
-        public T Insert(T model)
+        public IRissoleInsertCommand<T> Insert(T model)
         {
             var rissoleCommand = new RissoleCommand<T>(_dbConnection, _rissoleProvider);
             rissoleCommand.Script = _rissoleProvider.GetInsertScript<T>();
             rissoleCommand = rissoleCommand.InsertValues(model);
-            rissoleCommand.Script += _rissoleProvider.GetConnectionScript(_dbConnection, QueryCommandType.GetLastInsert);
 
-            return rissoleCommand.InsertValues(model).First();
+            return (IRissoleInsertCommand<T>)rissoleCommand.InsertValues(model);
         }
 
         public IRissoleCommand<T> Select(Expression<Func<T, object>> prdicate)

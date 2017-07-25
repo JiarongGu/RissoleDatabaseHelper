@@ -6,9 +6,9 @@ using System.Text;
 
 namespace RissoleDatabaseHelper.Core
 {
-    internal static class RissoleQueryDictionary
+    internal static class RissoleDictionary
     {
-        public static readonly Dictionary<Type, DbType> TypeMap = new Dictionary<Type, DbType>()
+        public static readonly Dictionary<Type, DbType> DbTypeMap = new Dictionary<Type, DbType>()
         {
             {typeof(byte), DbType.Byte},
             {typeof(sbyte), DbType.SByte},

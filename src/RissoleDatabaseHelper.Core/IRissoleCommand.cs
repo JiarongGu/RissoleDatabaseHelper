@@ -8,12 +8,6 @@ namespace RissoleDatabaseHelper.Core
 {
     public interface IRissoleCommand<T>
     {
-        int ExecuteNonQuery();
-
-        object ExecuteScalar();
-
-        List<T> ExecuteReader();
-
         string Script { get; set; }
 
         List<IDbDataParameter> Parameters { get; set; }
@@ -31,13 +25,5 @@ namespace RissoleDatabaseHelper.Core
         IRissoleCommand<T> Custom(string script, List<IDbDataParameter> parameters);
 
         IRissoleCommand<T> Custom(string script, params IDbDataParameter[] parameters);
-
-        IDbCommand BuildCommand();
-
-        T First();
-
-        T FirstOrDefault();
-
-        List<T> ToList();
     }
 }

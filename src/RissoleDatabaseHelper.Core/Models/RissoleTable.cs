@@ -23,11 +23,6 @@ namespace RissoleDatabaseHelper.Core.Models
 
         public List<RissoleColumn> Columns { get; set; }
 
-        public RissoleColumn GetColumnByPropertyName(string name)
-        {
-            return Columns.FirstOrDefault(x => x.Property.Name == name);
-        }
-
         public Type ReferenceType { get;}
     }
 }

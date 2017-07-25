@@ -16,7 +16,7 @@ namespace RissoleDatabaseHelper.Core.Models
         {
             Property = property;
             Name = property.Name;
-            DataType = property.GetType();
+            DataType = property.PropertyType;
             IsGenerated = false;
             IsComputed = false;
         }

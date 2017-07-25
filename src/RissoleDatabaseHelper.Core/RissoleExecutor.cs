@@ -1,42 +1,36 @@
-﻿using RissoleDatabaseHelper.Core.Models;
+﻿using RissoleDatabaseHelper.Core.Enums;
+using RissoleDatabaseHelper.Core.Exceptions;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using System.Text.RegularExpressions;
 
 namespace RissoleDatabaseHelper.Core
 {
-    public class RissoleExecutor<T> : IRissoleExecutor<T>
+    public static class RissoleExecutor
     {
-        private readonly IRissoleCommand<T> _rissoleCommand;
-        private readonly RissoleTable _table;
-
-        internal RissoleExecutor(IRissoleCommand<T> rissoleCommand)
-        {
-            _rissoleCommand = rissoleCommand;
-            _table = RissoleProvider.Instance.GetRissoleTable<T>();
-        }
-
         /// <summary>
         /// Execute Read by Command Read list of Current Type
         /// </summary>
         /// <param name="command"></param>
         /// <returns></returns>
-        public List<T> ExecuteReader(IDbCommand command)
+        public static List<T> ExecuteReader<T>(this IRissoleCommand<T> rissoleCommand)
         {
             List<T> models = new List<T>();
 
             try
             {
-                _rissoleCommand.Connection.Open();
-                IDataReader reader = command.ExecuteReader();
-
-                while (reader.Read())
+                using (var command = BuildCommand(rissoleCommand))
                 {
-                    models.Add(CreateModelFromReader(reader));
+                    rissoleCommand.Connection.Open();
+                    IDataReader reader = command.ExecuteReader();
+
+                    while (reader.Read())
+                    {
+                        models.Add(CreateModelFromReader<T>(reader));
+                    }
                 }
             }
             catch (Exception ex)
@@ -45,8 +39,7 @@ namespace RissoleDatabaseHelper.Core
             }
             finally
             {
-                command.Dispose();
-                _rissoleCommand.Connection.Close();
+                rissoleCommand.Connection.Close();
             }
 
             return models;
@@ -58,14 +51,17 @@ namespace RissoleDatabaseHelper.Core
         /// <param name="command"></param>
         /// <param name="model"></param>
         /// <returns></returns>
-        public int ExecuteNonQuery(IDbCommand command)
+        public static int ExecuteNonQuery<T>(this IRissoleCommand<T> rissoleCommand)
         {
             int result;
 
             try
             {
-                _rissoleCommand.Connection.Open();
-                result = command.ExecuteNonQuery();
+                using (var command = BuildCommand(rissoleCommand))
+                {
+                    rissoleCommand.Connection.Open();
+                    result = command.ExecuteNonQuery();
+                }
             }
             catch (Exception ex)
             {
@@ -73,8 +69,7 @@ namespace RissoleDatabaseHelper.Core
             }
             finally
             {
-                command.Dispose();
-                _rissoleCommand.Connection.Close();
+                rissoleCommand.Connection.Close();
             }
 
             return result;
@@ -85,14 +80,17 @@ namespace RissoleDatabaseHelper.Core
         /// </summary>
         /// <param name="command"></param>
         /// <returns></returns>
-        public object ExecuteScalar(IDbCommand command)
+        public static object ExecuteScalar<T>(this IRissoleCommand<T> rissoleCommand)
         {
             object result;
 
             try
             {
-                _rissoleCommand.Connection.Open();
-                result = command.ExecuteScalar();
+                using (var command = BuildCommand(rissoleCommand))
+                {
+                    rissoleCommand.Connection.Open();
+                    result = command.ExecuteScalar();
+                }
             }
             catch (Exception ex)
             {
@@ -100,38 +98,129 @@ namespace RissoleDatabaseHelper.Core
             }
             finally
             {
-                command.Dispose();
-                _rissoleCommand.Connection.Close();
+                rissoleCommand.Connection.Close();
             }
 
             return result;
         }
 
-        private T CreateModelFromReader(IDataReader reader)
+        public static List<object> ExecuteScalar<T>(this List<IRissoleCommand<T>> rissoleCommands)
         {
+            List<object> results = new List<object>();
+
+            if (rissoleCommands == null || rissoleCommands.Count == 0) return results;
+
+            var connection = rissoleCommands.First().Connection;
+
+            connection.Open();
+            using (var transaction = connection.BeginTransaction())
+            {
+                bool commit = true;
+
+                foreach (var rissoleCommand in rissoleCommands)
+                {
+                    try
+                    {
+                        var command = rissoleCommand.BuildCommand();
+                        var result = command.ExecuteScalar();
+                        results.Add(result);
+                    }
+                    catch (Exception ex)
+                    {
+                        results.Add(ex);
+                        commit = false;
+                    }
+                }
+
+                if (commit == true)
+                {
+                    transaction.Commit();
+                }
+                else
+                {
+                    transaction.Rollback();
+                }
+
+                transaction.Dispose();
+
+            }
+
+            connection.Close();
+
+            return results;
+        }
+
+        public static int Exec<T>(this IRissoleCommand<T> rissoleCommand)
+        {
+            return rissoleCommand.ExecuteNonQuery();
+        }
+
+        public static object Exec<T>(this IRissoleInsertCommand<T> rissoleCommand)
+        {
+            var rissoleProvider = RissoleProvider.Instance;
+            var connection = rissoleCommand.Connection;
+
+            var lastInsertScript = rissoleProvider.GetConnectionScript(connection, QueryCommandType.GetLastInsert);
+            var lastInsertCommand = new RissoleCommand<T>(connection, rissoleProvider, lastInsertScript);
+            
+            List<IRissoleCommand<T>> rissoleCommands = new List<IRissoleCommand<T>>();
+            rissoleCommands.Add(rissoleCommand);
+            rissoleCommands.Add(lastInsertCommand);
+            
+            return rissoleCommands.ExecuteScalar();
+        }
+
+        public static T First<T>(this IRissoleCommand<T> rissoleCommand)
+        {
+            return rissoleCommand.ExecuteReader().First();
+        }
+
+        public static T FirstOrDefault<T>(this IRissoleCommand<T> rissoleCommand)
+        {
+            return rissoleCommand.ExecuteReader().FirstOrDefault();
+        }
+
+        public static List<T> ToList<T>(this IRissoleCommand<T> rissoleCommand)
+        {
+            return rissoleCommand.ExecuteReader();
+        }
+
+        public static IDbCommand BuildCommand<T>(this IRissoleCommand<T> rissoleCommand)
+        {
+            var command = rissoleCommand.Connection.CreateCommand();
+            command.CommandText = rissoleCommand.Script;
+
+            foreach (var parameter in rissoleCommand.Parameters)
+            {
+                command.Parameters.Add(parameter);
+            }
+            return command;
+        }
+
+        private static T CreateModelFromReader<T>(IDataReader reader)
+        {
+            var table = RissoleProvider.Instance.GetRissoleTable<T>();
             T model = (T)Activator.CreateInstance(typeof(T));
 
             for (int i = 0; i < reader.FieldCount; i++)
             {
                 string fieldName = reader.GetName(i);
-                var columnDefinition = _table.Columns.Where(x => x.Name == fieldName).FirstOrDefault();
+                var column = table.Columns.Where(x => x.Name == fieldName).FirstOrDefault();
 
-                if (columnDefinition == null)
-                    throw new Exception(String.Format("sql read field {0}, does not found in model map", fieldName));
+                if (column == null)
+                    throw new RissoleException($"sql read field {fieldName}, does not found in model map");
 
-                var property = columnDefinition.Property;
-
-                //check if property is nullable type
-                bool isNullableType = property.PropertyType.GetTypeInfo().IsGenericType && property.PropertyType.GetGenericTypeDefinition() == typeof(Nullable<>);
-
+                var property = column.Property;
+                var propertyType = property.PropertyType;
+                
                 //check if property can contain null value
-                bool isNullable = isNullableType || property.PropertyType.GetTypeInfo().IsValueType == false;
-
-                //get property underlying type
-                string propertyTypeName = isNullableType ? property.PropertyType.GetGenericArguments()[0].GetTypeInfo().UnderlyingSystemType.Name : property.PropertyType.Name;
+                bool isNullable = Nullable.GetUnderlyingType(propertyType) != null || propertyType.GetTypeInfo().IsValueType == false;
 
                 //check if data column return null
                 bool isDataNull = reader.IsDBNull(i);
+
+                //get database type
+                var dataType = RissoleDictionary.DbTypeMap[propertyType];
 
                 if (isDataNull)
                 {
@@ -143,87 +232,71 @@ namespace RissoleDatabaseHelper.Core
                     {
                         property.SetValue(model, Activator.CreateInstance(property.PropertyType));
                     }
+                    continue;
                 }
-                else
+                
+                //TODO: try reader.getValue();
+                switch (dataType)
                 {
-                    switch (propertyTypeName)
-                    {
-                        case "Guid": property.SetValue(model, reader.GetGuid(i)); break;
-                        case "String": property.SetValue(model, reader.GetString(i)); break;
-                        case "Int32": property.SetValue(model, reader.GetInt32(i)); break;
-                        case "DateTime": property.SetValue(model, reader.GetDateTime(i)); break;
-                        case "Decimal": property.SetValue(model, reader.GetDecimal(i)); break;
-                        case "Boolean": property.SetValue(model, reader.GetBoolean(i)); break;
-                        default: throw new Exception("Unknow Type: " + property.PropertyType.Name);
-                    }
+                    case DbType.Byte:
+                        property.SetValue(model, reader.GetByte(i));
+                        break;
+                    case DbType.Int16:
+                        property.SetValue(model, reader.GetInt16(i));
+                        break;
+                    case DbType.Int32:
+                        property.SetValue(model, reader.GetInt32(i));
+                        break;
+                    case DbType.Int64:
+                        property.SetValue(model, reader.GetInt64(i));
+                        break;
+                    case DbType.Double:
+                        property.SetValue(model, reader.GetDouble(i));
+                        break;
+                    case DbType.Decimal:
+                        property.SetValue(model, reader.GetDecimal(i));
+                        break;
+                    case DbType.Boolean:
+                        property.SetValue(model, reader.GetBoolean(i));
+                        break;
+                    case DbType.String:
+                        property.SetValue(model, reader.GetString(i));
+                        break;
+                    case DbType.StringFixedLength:
+                        property.SetValue(model, reader.GetChar(i));
+                        break;
+                    case DbType.Guid:
+                        property.SetValue(model, reader.GetGuid(i));
+                        break;
+                    case DbType.DateTime:
+                        property.SetValue(model, reader.GetDateTime(i));
+                        break;
+                    case DbType.DateTimeOffset:
+                        property.SetValue(model, reader.GetDateTime(i));
+                        break;
+                    case DbType.SByte:
+                        property.SetValue(model, Convert.ToSByte(reader.GetByte(i)));
+                        break;
+                    case DbType.UInt16:
+                        property.SetValue(model, Convert.ToUInt16(reader.GetInt16(i)));
+                        break;
+                    case DbType.UInt32:
+                        property.SetValue(model, Convert.ToUInt32(reader.GetInt32(i)));
+                        break;
+                    case DbType.UInt64:
+                        property.SetValue(model, Convert.ToUInt64(reader.GetInt64(i)));
+                        break;
+                    case DbType.Single:
+                        property.SetValue(model, Convert.ToSingle(reader.GetDouble(i)));
+                        break;
+                    case DbType.Binary:
+                        property.SetValue(model, BitConverter.GetBytes(reader.GetDouble(i)));
+                        break;
+                    default: throw new Exception("Unknow Type: " + propertyType.Name);
                 }
             }
             return model;
         }
 
-        /// <summary>
-        /// Insert and get the new object in database
-        /// </summary>
-        /// <param name="model"></param>
-        /// <returns></returns>
-        public T Insert(IDbCommand command, T model)
-        {
-            foreach (var computedData in _table.Columns.Where(x => x.IsComputed))
-            {
-                computedData.Property.SetValue(model, CreateComputedValue(computedData.DataType));
-            }
-
-            command = SetParameters(command, model, _table);
-
-            //insert into database
-            var generatedId = (int)ExecuteScalar(command);
-
-            //update model key
-            var columnDefinition = _table.Columns.Where(x => x.IsGenerated == true).FirstOrDefault();
-
-            if (columnDefinition != null)
-            {
-                columnDefinition.Property.SetValue(model, generatedId);
-            }
-
-            return model;
-        }
-
-        private object CreateComputedValue(Type dataType)
-        {
-            switch (dataType.Name)
-            {
-                case "Guid": return Guid.NewGuid();
-                default: throw new Exception("Unknow Computed Type: " + dataType.Name);
-            }
-        }
-
-        private IDbCommand SetParameters(IDbCommand command, T model, RissoleTable table)
-        {
-            foreach (var column in table.Columns)
-            {
-                var propertyParameter = "@" + column.Property.Name;
-                var propertyRegex = @"[^\w]" + propertyParameter + @"([^\w]|$)";
-
-                if (Regex.Matches(command.CommandText, propertyRegex).Count > 0)
-                {
-                    var property = column.Property;
-
-                    var parameter = command.CreateParameter();
-                    parameter.ParameterName = propertyParameter;
-                    parameter.Value = property.GetValue(model) == null ? DBNull.Value : property.GetValue(model);
-                    parameter.DbType = RissoleQueryDictionary.TypeMap[property.GetType()];
-
-                    command.Parameters.Add(parameter);
-                }
-            }
-
-            return command;
-        }
-
-        public void Dispose()
-        {
-            throw new NotImplementedException();
-        }
     }
 }

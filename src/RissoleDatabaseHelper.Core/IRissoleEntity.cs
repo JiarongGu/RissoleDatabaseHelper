@@ -22,14 +22,14 @@ namespace RissoleDatabaseHelper.Core
 
         IRissoleCommand<T> First(Expression<Func<T, object>> prdicate);
 
-        T Insert(T model);
+        IRissoleInsertCommand<T> Insert(T model);
 
-        int Delete(Expression<Func<T, bool>> prdicate);
+        IRissoleCommand<T> Delete(Expression<Func<T, bool>> prdicate);
 
-        int Delete(T model);
+        IRissoleCommand<T> Delete(T model);
 
-        int Update(T model, bool includePirmaryKey = false);
+        IRissoleCommand<T> Update(T model, bool includePirmaryKey = false);
 
-        int Update(IList<T> models, bool includePirmaryKey = false);
+        IRissoleCommand<T> Update(IList<T> models, bool includePirmaryKey = false);
     }
 }
