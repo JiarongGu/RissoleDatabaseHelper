@@ -226,7 +226,7 @@ namespace RissoleDatabaseHelper.Core
         }
         
         /// <summary>
-        /// 
+        /// Get Parameter value and name by model and table definition
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="table"></param>

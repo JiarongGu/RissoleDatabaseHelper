@@ -1,4 +1,5 @@
-﻿using RissoleDatabaseHelper.Core.Enums;
+﻿using RissoleDatabaseHelper.Core.Commands;
+using RissoleDatabaseHelper.Core.Enums;
 using RissoleDatabaseHelper.Core.Exceptions;
 using System;
 using System.Collections.Generic;
@@ -16,7 +17,7 @@ namespace RissoleDatabaseHelper.Core
         /// </summary>
         /// <param name="command"></param>
         /// <returns></returns>
-        public static List<T> ExecuteReader<T>(this IRissoleCommand<T> rissoleCommand)
+        public static List<T> ExecuteReader<T>(this IRissoleBaseCommand<T> rissoleCommand)
         {
             List<T> models = new List<T>();
 
@@ -51,7 +52,7 @@ namespace RissoleDatabaseHelper.Core
         /// <param name="command"></param>
         /// <param name="model"></param>
         /// <returns></returns>
-        public static int ExecuteNonQuery<T>(this IRissoleCommand<T> rissoleCommand)
+        public static int ExecuteNonQuery<T>(this IRissoleBaseCommand<T> rissoleCommand)
         {
             int result;
 
@@ -80,7 +81,7 @@ namespace RissoleDatabaseHelper.Core
         /// </summary>
         /// <param name="command"></param>
         /// <returns></returns>
-        public static object ExecuteScalar<T>(this IRissoleCommand<T> rissoleCommand)
+        public static object ExecuteScalar<T>(this IRissoleBaseCommand<T> rissoleCommand)
         {
             object result;
 
@@ -104,7 +105,7 @@ namespace RissoleDatabaseHelper.Core
             return result;
         }
 
-        public static List<object> ExecuteScalar<T>(this List<IRissoleCommand<T>> rissoleCommands)
+        public static List<object> ExecuteScalar<T>(this List<IRissoleBaseCommand<T>> rissoleCommands)
         {
             List<object> results = new List<object>();
 
@@ -150,12 +151,12 @@ namespace RissoleDatabaseHelper.Core
             return results;
         }
 
-        public static int Exec<T>(this IRissoleCommand<T> rissoleCommand)
+        public static int Exec<T>(this IRissoleBaseCommand<T> rissoleCommand)
         {
             return rissoleCommand.ExecuteNonQuery();
         }
 
-        public static object Exec<T>(this IRissoleInsertCommand<T> rissoleCommand)
+        public static T Exec<T>(this IRissoleInsertCommand<T> rissoleCommand)
         {
             var rissoleProvider = RissoleProvider.Instance;
             var connection = rissoleCommand.Connection;
@@ -163,29 +164,29 @@ namespace RissoleDatabaseHelper.Core
             var lastInsertScript = rissoleProvider.GetConnectionScript(connection, QueryCommandType.GetLastInsert);
             var lastInsertCommand = new RissoleCommand<T>(connection, rissoleProvider, lastInsertScript);
             
-            List<IRissoleCommand<T>> rissoleCommands = new List<IRissoleCommand<T>>();
+            List<IRissoleBaseCommand<T>> rissoleCommands = new List<IRissoleBaseCommand<T>>();
             rissoleCommands.Add(rissoleCommand);
             rissoleCommands.Add(lastInsertCommand);
             
-            return rissoleCommands.ExecuteScalar();
+            return rissoleCommand.ExecuteReader().FirstOrDefault();
         }
 
-        public static T First<T>(this IRissoleCommand<T> rissoleCommand)
+        public static T First<T>(this IRissoleBaseCommand<T> rissoleCommand)
         {
             return rissoleCommand.ExecuteReader().First();
         }
 
-        public static T FirstOrDefault<T>(this IRissoleCommand<T> rissoleCommand)
+        public static T FirstOrDefault<T>(this IRissoleBaseCommand<T> rissoleCommand)
         {
             return rissoleCommand.ExecuteReader().FirstOrDefault();
         }
 
-        public static List<T> ToList<T>(this IRissoleCommand<T> rissoleCommand)
+        public static List<T> ToList<T>(this IRissoleBaseCommand<T> rissoleCommand)
         {
             return rissoleCommand.ExecuteReader();
         }
 
-        public static IDbCommand BuildCommand<T>(this IRissoleCommand<T> rissoleCommand)
+        public static IDbCommand BuildCommand<T>(this IRissoleBaseCommand<T> rissoleCommand)
         {
             var command = rissoleCommand.Connection.CreateCommand();
             command.CommandText = rissoleCommand.Script;

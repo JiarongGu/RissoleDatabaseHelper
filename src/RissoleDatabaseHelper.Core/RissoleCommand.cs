@@ -1,4 +1,5 @@
-﻿using RissoleDatabaseHelper.Core.Models;
+﻿using RissoleDatabaseHelper.Core.Commands;
+using RissoleDatabaseHelper.Core.Models;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -9,11 +10,11 @@ using System.Threading.Tasks;
 
 namespace RissoleDatabaseHelper.Core
 {
-    public class RissoleCommand<T> : IRissoleCommand<T>
+    public class RissoleCommand<T> : IRissoleBaseCommand<T>
     {
         private IDbConnection _dbConnection;
         private IRissoleProvider _rissoleProvider;
-        private IRissoleCommand<T> _parentCommand; 
+        private IRissoleBaseCommand<T> _parentCommand; 
 
         private IDbCommand _command;
         private List<IDbDataParameter> _parameters;
@@ -108,19 +109,19 @@ namespace RissoleDatabaseHelper.Core
             }
         }
 
-        public IRissoleCommand<T> Join<TJoin>(Expression<Func<T, TJoin, bool>> prdicate)
+        public IRissoleBaseCommand<T> Join<TJoin>(Expression<Func<T, TJoin, bool>> prdicate)
         {
             var rissoleScript = _rissoleProvider.GetJoinScript(prdicate, Stack);
             return ConcatScript(rissoleScript);
         }
 
-        public IRissoleCommand<T> Where(Expression<Func<T, bool>> prdicate)
+        public IRissoleBaseCommand<T> Where(Expression<Func<T, bool>> prdicate)
         {
             var rissoleScript = _rissoleProvider.GetWhereScript(prdicate, Stack);
             return ConcatScript(rissoleScript);
         }
 
-        public IRissoleCommand<T> Where(T model)
+        public IRissoleBaseCommand<T> Where(T model)
         {
             var rissoleScript = _rissoleProvider.GetWhereScript(model, Stack);
             return ConcatScript(rissoleScript);
@@ -138,7 +139,7 @@ namespace RissoleDatabaseHelper.Core
             return ConcatScript(rissoleScript);
         }
 
-        public IRissoleCommand<T> Custom(string script, List<IDbDataParameter> parameters)
+        public IRissoleBaseCommand<T> Custom(string script, List<IDbDataParameter> parameters)
         {
             var rissoleCommand = new RissoleCommand<T>(this);
             rissoleCommand.Script += " " + script;
@@ -147,7 +148,7 @@ namespace RissoleDatabaseHelper.Core
             return rissoleCommand;
         }
         
-        public IRissoleCommand<T> Custom(string script, params IDbDataParameter[] parameters)
+        public IRissoleBaseCommand<T> Custom(string script, params IDbDataParameter[] parameters)
         {
             return Custom(script, new List<IDbDataParameter>(parameters));
         }

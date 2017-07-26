@@ -26,7 +26,6 @@ namespace RissoleDatabaseHelperTests.Core
         [TestMethod]
         public void TestCommandBuildNoExeception1()
         {
-
             var command = _accounts.Select(x => x).Join<User>((x, y) => x.AccountId == y.UserId)
                 .Where(x => x.AccountId == Guid.NewGuid()).Custom("ORDER BY 1 DESC");
         }
