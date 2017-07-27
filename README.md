@@ -14,7 +14,7 @@ Download and include this liabray into your project.
 
 ## How To User
 
-Create your class with "Flag attributes", binding the class object to matched table values.
+###Create your class with "Flag attributes", binding the class object to matched table values.
 
 ```
 [Table("examples")]
@@ -28,7 +28,7 @@ public class Example
     public string ExampleContent { get; set; }
 ```
 
-Create RissoleEntity Object to access the database, you can use any dbconnection you want as long as they supports IDbconnection
+###Create RissoleEntity Object to access the database, you can use any dbconnection you want as long as they supports IDbconnection
 
 ```
 IDbConnection connection = new DbConnection("{your connection strings}");
@@ -47,13 +47,13 @@ The Exec
 
 ## Other Examples
 
-Join with other table
+###Join with other table
 
 ```
 examples.Select(x => x).Join<Test>((x, y) => x.ExampleId == y.ExampleId).Where(x => x.ExampleId == {ExampleId}).Exec();
 ```
 
-Also
+Also：
 
 ```
 var command = examples.Select(x => x).Join<Test>((x, y) => x.ExampleId == y.ExampleId)
@@ -61,7 +61,7 @@ command = command.Join<Test, Unit>(x => x.TestId == TestId).Where(x => x.TestId 
 return command.Exec();
 ```
 
-Add custom command for more complex query building
+###Add custom command for more complex query building
 
 ```
 examples.Select(x => x).Custom("ORDER BY 1 DESC");
@@ -70,7 +70,7 @@ List<IDbDataParameter> paramters = new ...;
 examples.Select(x => x).Custom("WHERE examples_id == @ExampleId AND content LIKE '%@Content%'", parameters});
 ```
 
-Also
+Also：
 
 ```
 examples.Select(x => x).Custom("WHERE examples_id == @ExampleId AND content LIKE '%@Content%'", parameter1, parameter2 ...);
