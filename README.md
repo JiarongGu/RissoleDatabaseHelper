@@ -21,7 +21,7 @@ Download and include this liabray into your project.
 [Table("examples")]
 public class Example
 {
-    [Column(Name = "examples_id", IsComputed = true, DataType = typeof(Guid))]
+    [Column(Name = "examples_id", IsComputed = true]
     [PrimaryKey]
     public Guid ExamplesId { get; set; }
 
