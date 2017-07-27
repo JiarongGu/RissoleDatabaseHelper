@@ -17,7 +17,7 @@ namespace RissoleDatabaseHelper.Core
 
         RissoleScript GetWhereScript<T>(T model, int stack);
 
-        RissoleScript GetJoinScript<T, TJoin>(Expression<Func<T, TJoin, bool>> expression, int stack);
+        RissoleScript GetJoinScript<TFrom, TJoin>(Expression<Func<TFrom, TJoin, bool>> expression, int stack);
         
         RissoleScript GetInsertValueScript<T>(T model, int stack);
 
@@ -34,6 +34,6 @@ namespace RissoleDatabaseHelper.Core
 
         string GetUpdateScript<T>();
 
-        string GetConnectionScript(IDbConnection dbConnection, QueryCommandType commandType);
+        string GetConnectionScript(IDbConnection dbConnection, ReferencedScriptType commandType);
     }
 }

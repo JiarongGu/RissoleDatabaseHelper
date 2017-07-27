@@ -1,4 +1,4 @@
-﻿using RissoleDatabaseHelper.Core.Enums;
+﻿using RissoleDatabaseHelper.Core.Commands;
 using RissoleDatabaseHelper.Core.Models;
 using System;
 using System.Collections.Generic;

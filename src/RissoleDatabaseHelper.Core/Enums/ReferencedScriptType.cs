@@ -4,7 +4,7 @@ using System.Text;
 
 namespace RissoleDatabaseHelper.Core.Enums
 {
-    internal enum QueryCommandType
+    internal enum ReferencedScriptType
     {
         GetLastInsert,
     }

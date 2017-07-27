@@ -161,7 +161,7 @@ namespace RissoleDatabaseHelper.Core
             var rissoleProvider = RissoleProvider.Instance;
             var connection = rissoleCommand.Connection;
 
-            var lastInsertScript = rissoleProvider.GetConnectionScript(connection, QueryCommandType.GetLastInsert);
+            var lastInsertScript = rissoleProvider.GetConnectionScript(connection, ReferencedScriptType.GetLastInsert);
             var lastInsertCommand = new RissoleCommand<T>(connection, rissoleProvider, lastInsertScript);
             
             List<IRissoleBaseCommand<T>> rissoleCommands = new List<IRissoleBaseCommand<T>>();

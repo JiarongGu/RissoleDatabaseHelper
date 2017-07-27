@@ -1,4 +1,7 @@
-﻿using System;
+﻿using RissoleDatabaseHelper.Core.Enums;
+using RissoleDatabaseHelper.Core.Exceptions;
+using RissoleDatabaseHelper.Core.Models;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq.Expressions;
@@ -6,6 +9,9 @@ using System.Text;
 
 namespace RissoleDatabaseHelper.Core
 {
+    /// <summary>
+    /// static dictionary class to convert constent values
+    /// </summary>
     internal static class RissoleDictionary
     {
         public static readonly Dictionary<Type, DbType> DbTypeMap = new Dictionary<Type, DbType>()
@@ -95,12 +101,21 @@ namespace RissoleDatabaseHelper.Core
             }
         }
 
-        public static readonly List<string> GetLastInsertCommands = new List<string>()
+        public static List<RissoleReferencedScript> GetReferenceScripts(ReferencedScriptType referencedScriptType)
         {
-            "SELECT LAST_INSERT_ID();",
-            "SELECT SCOPE_IDENTITY();",
-            "SELECT lastval();",
-            "SELECT SEQNAME.CURRVAL FROM DUAL;"
+            switch (referencedScriptType)
+            {
+                case ReferencedScriptType.GetLastInsert: return LastInsertScripts;
+                default: throw new RissoleException($"no script defined for {referencedScriptType.ToString()}");
+            }
+        }
+
+        private static readonly List<RissoleReferencedScript> LastInsertScripts = new List<RissoleReferencedScript>()
+        {
+            new RissoleReferencedScript("SELECT LAST_INSERT_ID();"),
+            new RissoleReferencedScript("SELECT SCOPE_IDENTITY();"),
+            new RissoleReferencedScript("SELECT lastval();"),
+            new RissoleReferencedScript("SELECT SEQNAME.CURRVAL FROM DUAL;")
         };
     }
 }

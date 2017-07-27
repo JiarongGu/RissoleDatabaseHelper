@@ -18,13 +18,13 @@ namespace RissoleDatabaseHelper.Core
 
         private Dictionary<Type, RissoleTable> _rissoleTables;
         private Dictionary<string, string> _rissoleScripts;
-        private Dictionary<Tuple<IDbConnection, QueryCommandType>, string> _connectionCommands;
+        private Dictionary<Tuple<IDbConnection, ReferencedScriptType>, RissoleReferencedScript> _referencedScripts;
 
         private RissoleProvider() {
             _rissoleTables = new Dictionary<Type, RissoleTable>();
             _rissoleDefinitionBuilder = new RissoleDefinitionBuilder();
             _rissoleConditionBuilder = new RissoleConditionBuilder();
-            _connectionCommands = new Dictionary<Tuple<IDbConnection, QueryCommandType>, string>();
+            _referencedScripts = new Dictionary<Tuple<IDbConnection, ReferencedScriptType>, RissoleReferencedScript>();
         }
 
         public RissoleTable GetRissoleTable<T>()
@@ -158,43 +158,39 @@ namespace RissoleDatabaseHelper.Core
         /// Get database dependent script based on connection and command types
         /// </summary>
         /// <param name="dbConnection"></param>
-        /// <param name="commandType"></param>
+        /// <param name="scriptType"></param>
         /// <returns></returns>
-        public string GetConnectionScript(IDbConnection dbConnection, QueryCommandType commandType)
+        public string GetConnectionScript(IDbConnection dbConnection, ReferencedScriptType scriptType)
         {
-            var key = new Tuple<IDbConnection, QueryCommandType>(dbConnection, commandType);
+            var key = new Tuple<IDbConnection, ReferencedScriptType>(dbConnection, scriptType);
 
-            if (!_connectionCommands.ContainsKey(key))
+            if (!_referencedScripts.ContainsKey(key))
             {
-                var commands = new List<string>();
-                var vaildCommand = string.Empty;
+                var referencedScripts = RissoleDictionary.GetReferenceScripts(scriptType);
+                var vaildReferenceScript = GetVaildReferencedScript(dbConnection, referencedScripts);
 
-                switch (commandType)
-                {
-                    case QueryCommandType.GetLastInsert:
-                        commands = RissoleDictionary.GetLastInsertCommands;
-                        break;
-                }
-                
-                foreach (var command in commands)
-                {
-                    if (IsCommandVaild(dbConnection, command))
-                    {
-                        vaildCommand = command;
-                        break;
-                    }
-                }
+                if(vaildReferenceScript == null)
+                    throw new RissoleException($"No vaild command for {dbConnection.ConnectionString}, {scriptType.ToString()}");
 
-                if (string.IsNullOrEmpty(vaildCommand))
-                    throw new RissoleException($"No vaild command for {dbConnection.ConnectionString}, {commandType.ToString()}");
-
-                _connectionCommands.Add(key, vaildCommand);
+                _referencedScripts.Add(key, vaildReferenceScript);
             }
 
-            return _connectionCommands[key];
+            return _referencedScripts[key].ActualScript;
         }
 
-        private bool IsCommandVaild(IDbConnection dbConnection, string command)
+        private RissoleReferencedScript GetVaildReferencedScript(IDbConnection dbConnection, List<RissoleReferencedScript> referencedScripts)
+        {
+            foreach (var script in referencedScripts)
+            {
+                if (IsScriptVaild(dbConnection, script.TrialScript))
+                {
+                    return script;
+                }
+            }
+            return null;
+        }
+         
+        private bool IsScriptVaild(IDbConnection dbConnection, string script)
         {
             bool result = false;
 
@@ -205,7 +201,7 @@ namespace RissoleDatabaseHelper.Core
                 {
                     using (var dbCommand = dbConnection.CreateCommand())
                     {
-                        dbCommand.CommandText = command;
+                        dbCommand.CommandText = script;
                         dbCommand.Transaction = transaction;
                         dbCommand.ExecuteNonQuery();
                     }

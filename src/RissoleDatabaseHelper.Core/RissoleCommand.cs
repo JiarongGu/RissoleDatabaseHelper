@@ -115,6 +115,12 @@ namespace RissoleDatabaseHelper.Core
             return ConcatScript(rissoleScript);
         }
 
+        public IRissoleBaseCommand<T> Join<TFrom, TJoin>(Expression<Func<TFrom, TJoin, bool>> prdicate)
+        {
+            var rissoleScript = _rissoleProvider.GetJoinScript(prdicate, Stack);
+            return ConcatScript(rissoleScript);
+        }
+
         public IRissoleBaseCommand<T> Where(Expression<Func<T, bool>> prdicate)
         {
             var rissoleScript = _rissoleProvider.GetWhereScript(prdicate, Stack);
