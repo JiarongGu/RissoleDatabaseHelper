@@ -101,7 +101,7 @@ examples.Exec();
 
 .First<T>() - Execute and return first T
 
-.FirstOrDefault<T> - Execute and return first T or null
+.FirstOrDefault<T>() - Execute and return first T or null
 
 .ToList<T>() - Execute and return list of T
 
