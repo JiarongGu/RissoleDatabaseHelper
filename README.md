@@ -1,4 +1,4 @@
-# RissoleDatabaseHelper
+# RissoleDatabaseHelper - Alapa
 Simple ORM database helper liabrary for .net core. 
 To be easier use the basic connected method read/write with a range of database types
 
@@ -53,13 +53,21 @@ The Exec
 #### Join with other table
 
 ```
-examples.Select(x => x).Join<Test>((x, y) => x.ExampleId == y.ExampleId).Where(x => x.ExampleId == {ExampleId}).Exec();
+// join with single table
+examples.Select(x => x)
+    .Join<Test>((x, y) => x.ExampleId == y.ExampleId)
+    .Where(x => x.ExampleId == {ExampleId})
+    .Exec();
 ```
 
 ```
-var command = examples.Select(x => x).Join<Test>((x, y) => x.ExampleId == y.ExampleId)
+var command = examples.Select(x => x).Join<Test>((x, y) => x.ExampleId == y.ExampleId)；
+
+// add another join
 command = command.Join<Test, Unit>(x => x.TestId == TestId).Where(x => x.TestId == {TestId});
-return command.Exec();
+
+// execuate command
+command.Exec();
 ```
 
 
@@ -67,11 +75,34 @@ return command.Exec();
 
 ```
 examples.Select(x => x).Custom("ORDER BY 1 DESC");
+```
 
+```
 List<IDbDataParameter> paramters = new ...;
+
 examples.Select(x => x).Custom("WHERE examples_id == @ExampleId AND content LIKE '%@Content%'", parameters});
 ```
 
 ```
-examples.Select(x => x).Custom("WHERE examples_id == @ExampleId AND content LIKE '%@Content%'", parameter1, parameter2 ...);
+examples.Custom("{Your Custom Command}",parameter1, parameter2, parameter3 ...);
+
+examples.Exec();
 ```
+
+## Execution Methods
+
+.ExecuteReader<T>() - Similar as normal ExecuteReader but returns a list of T
+
+.ExecuteNonQuery<T>() - Similar as normal ExecuteNonQuery return number of row effected
+
+.ExecuteScalar<T>() - Similar as normal ExecuteScalar return output value
+
+.Exec<T>() - Default option to execute different type of command return based on type of command
+
+.First<T>() - Execute and return first T
+
+.FirstOrDefault<T> - Execute and return first T or null
+
+.ToList<T>() - Execute and return list of T
+
+.BuildCommand() - Build normal IDbCommand

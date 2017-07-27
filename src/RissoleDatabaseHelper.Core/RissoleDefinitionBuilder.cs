@@ -58,7 +58,6 @@ namespace RissoleDatabaseHelper.Core
         public List<RissoleKey> BuildRissoleKeys(PropertyInfo property)
         {
             List<RissoleKey> keys = new List<RissoleKey>();
-
             PrimaryKeyAttribute primaryKeyAttribute = property.GetCustomAttribute<PrimaryKeyAttribute>();
             if(primaryKeyAttribute != null)
                 keys.Add(new RissoleKey(primaryKeyAttribute));
